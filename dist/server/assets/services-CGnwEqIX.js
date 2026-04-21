@@ -1,0 +1,58 @@
+import { T as jsxRuntimeExports } from "./worker-entry-CIoqu0JI.js";
+import { S as Sparkles, B as Button, L as Link, P as Phone } from "./router-BTvmfPph.js";
+import { D as Droplets, S as Scissors, C as CircleCheck } from "./scissors-B2_2gpl2.js";
+import "node:events";
+import "node:async_hooks";
+import "node:stream/web";
+import "node:stream";
+const services = [{
+  icon: Droplets,
+  title: "Pressure Washing",
+  price: "£2.50 per sqm",
+  desc: "Restore driveways, patios, paths and decking. We lift years of grime, moss and algae for a fresh-looking surface.",
+  features: ["Driveways, patios, paths, decking", "Add-on: Stone Snow Washing +£0.50/sqm", "Add-on: Sanding +£0.50/sqm", "Free pre-treatment for stubborn moss"]
+}, {
+  icon: Sparkles,
+  title: "Window Cleaning",
+  price: "From £2.50 per window",
+  desc: "Streak-free, spot-free windows inside or out. Pure water reach-and-wash for safe upper-floor cleaning.",
+  features: ["Large windows: £10", "Medium windows: £5", "Small windows: £2.50", "Frames & sills wiped down"]
+}, {
+  icon: Scissors,
+  title: "Lawn Mowing",
+  price: "£0.25 per sqm",
+  desc: "Sharp, even cuts that keep your lawn healthy. Edges trimmed and clippings removed for a tidy finish.",
+  features: ["Neat, even cuts", "Edge trimming included", "Clippings removed", "Regular schedules available"]
+}];
+function ServicesPage() {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("section", { className: "bg-secondary/40 py-16", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mx-auto max-w-4xl px-4 text-center sm:px-6", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-semibold uppercase tracking-wider text-primary", children: "Our Services" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "mt-2 font-display text-4xl font-extrabold sm:text-5xl", children: "Everything your property needs — outside" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-4 text-lg text-muted-foreground", children: "Clear, per-square-metre pricing. No call-out fees. Free quotes across Nottingham & Derby." })
+    ] }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("section", { className: "py-16", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mx-auto grid max-w-6xl gap-8 px-4 sm:px-6", children: services.map((s) => /* @__PURE__ */ jsxRuntimeExports.jsxs("article", { className: "grid gap-6 rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)] sm:p-8 md:grid-cols-[auto_1fr_auto] md:items-center", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary", children: /* @__PURE__ */ jsxRuntimeExports.jsx(s.icon, { className: "h-7 w-7" }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "font-display text-2xl font-bold", children: s.title }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-primary font-semibold", children: s.price }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-2 text-muted-foreground", children: s.desc }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "mt-4 grid gap-2 sm:grid-cols-2", children: s.features.map((f) => /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { className: "flex gap-2 text-sm", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "h-4 w-4 shrink-0 text-accent" }),
+          " ",
+          f
+        ] }, f)) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col gap-2 md:w-44", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Button, { asChild: true, variant: "hero", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/contact", children: "Book This Service" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Button, { asChild: true, variant: "outline", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("a", { href: "tel:07554639668", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(Phone, { className: "h-4 w-4" }),
+          " Call"
+        ] }) })
+      ] })
+    ] }, s.title)) }) })
+  ] });
+}
+export {
+  ServicesPage as component
+};
