@@ -31,7 +31,7 @@ function HomePage() {
   return (
     <>
       {/* HERO */}
-      <section className="relative overflow-hidden pt-20">
+      <section className="relative overflow-hidden pt-20 min-h-screen">
         <div className="absolute inset-0">
           <img
             src={heroImg}
