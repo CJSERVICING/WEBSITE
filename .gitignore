@@ -8,12 +8,3 @@ node_modules
 .idea
 .vscode/settings.json
 build
-.wrangler
-node_modules
-.DS_Store
-.env.local
-.env.*.local
-*.log
-.idea
-.vscode/settings.json
-build
