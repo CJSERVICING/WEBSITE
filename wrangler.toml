@@ -1,19 +1,13 @@
 compatibility_date = "2024-12-16"
-compatibility_flags = ["streams_enable_constructors"]
 
 name = "website"
-
-[env.production]
-routes = [
-  { pattern = "cjservicing.com", zone_name = "cjservicing.com" },
-]
+main = "src/index.tsx"
+type = "javascript"
 
 [build]
 command = "npm run build"
 cwd = "./"
-destination = "dist"
+watch_paths = ["src/**/*.tsx", "src/**/*.ts", "public/**/*"]
 
-[env.production.build]
-command = "npm run build"
-cwd = "./"
-destination = "dist"
+[env.production]
+vars = { ENVIRONMENT = "production" }

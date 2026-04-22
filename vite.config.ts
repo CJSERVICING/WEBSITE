@@ -1,14 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { getViteConfig } from '@cloudflare/vite-plugin'
-
-const viteConfig = getViteConfig({
-  plugins: [react()],
-})
+import path from 'path'
 
 export default defineConfig({
-  ...viteConfig,
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   build: {
+    outDir: 'dist',
+    sourcemap: false,
     minify: 'terser',
     terserOptions: {
       compress: {
@@ -22,8 +25,5 @@ export default defineConfig({
         assetFileNames: 'assets/[name].[hash][extname]',
       },
     },
-  },
-  ssr: {
-    external: ['@cloudflare/workers-types'],
   },
 })
