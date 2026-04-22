@@ -1,0 +1,19 @@
+compatibility_date = "2024-12-16"
+compatibility_flags = ["streams_enable_constructors"]
+
+name = "website"
+
+[env.production]
+routes = [
+  { pattern = "cjservicing.com", zone_name = "cjservicing.com" },
+]
+
+[build]
+command = "npm run build"
+cwd = "./"
+destination = "dist"
+
+[env.production.build]
+command = "npm run build"
+cwd = "./"
+destination = "dist"
