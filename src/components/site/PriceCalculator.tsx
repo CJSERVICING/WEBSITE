@@ -17,14 +17,19 @@ export function PriceCalculator() {
   const [shown, setShown] = useState<number | null>(null);
 
   const total = useMemo(() => {
-    if (service === "pressure") {
-      let r = 2.5 + (snow ? 0.5 : 0) + (sanding ? 0.5 : 0);
-      return r * sqm;
+    try {
+      if (service === "pressure") {
+        let r = 2.5 + (snow ? 0.5 : 0) + (sanding ? 0.5 : 0);
+        return Math.max(0, r * Math.max(0, sqm));
+      }
+      if (service === "window") {
+        return Math.max(0, large * 10 + medium * 5 + small * 2.5);
+      }
+      return Math.max(0, 0.25 * Math.max(0, sqm));
+    } catch (e) {
+      console.error('Price calculation error:', e);
+      return 0;
     }
-    if (service === "window") {
-      return large * 10 + medium * 5 + small * 2.5;
-    }
-    return 0.25 * sqm;
   }, [service, sqm, large, medium, small, snow, sanding]);
 
   const services: { id: Service; label: string }[] = [
@@ -32,6 +37,35 @@ export function PriceCalculator() {
     { id: "window", label: "Window Cleaning" },
     { id: "lawn", label: "Lawn Mowing" },
   ];
+
+  const handleServiceChange = (newService: Service) => {
+    setService(newService);
+    setShown(null);
+  };
+
+  const handleSqmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.currentTarget.value) || 0;
+    setSqm(Math.max(0, value));
+  };
+
+  const handleLargeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.currentTarget.value) || 0;
+    setLarge(Math.max(0, value));
+  };
+
+  const handleMediumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.currentTarget.value) || 0;
+    setMedium(Math.max(0, value));
+  };
+
+  const handleSmallChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.currentTarget.value) || 0;
+    setSmall(Math.max(0, value));
+  };
+
+  const handleCalculate = () => {
+    setShown(total);
+  };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)] sm:p-8">
@@ -52,7 +86,7 @@ export function PriceCalculator() {
             <button
               key={s.id}
               type="button"
-              onClick={() => { setService(s.id); setShown(null); }}
+              onClick={() => handleServiceChange(s.id)}
               className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
                 service === s.id
                   ? "border-primary bg-primary text-primary-foreground"
@@ -68,7 +102,13 @@ export function PriceCalculator() {
       {(service === "pressure" || service === "lawn") && (
         <div className="mb-5">
           <Label htmlFor="sqm" className="mb-2 block text-sm font-medium">Square Meters</Label>
-          <Input id="sqm" type="number" min={0} value={sqm} onChange={(e) => setSqm(+e.target.value || 0)} />
+          <Input 
+            id="sqm" 
+            type="number" 
+            min={0} 
+            value={sqm} 
+            onChange={handleSqmChange}
+          />
         </div>
       )}
 
@@ -76,11 +116,19 @@ export function PriceCalculator() {
         <div className="mb-5 space-y-2 rounded-lg bg-muted/50 p-4">
           <p className="text-sm font-medium">Add-ons</p>
           <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <input type="checkbox" checked={snow} onChange={(e) => setSnow(e.target.checked)} />
+            <input 
+              type="checkbox" 
+              checked={snow} 
+              onChange={(e) => setSnow(e.currentTarget.checked)} 
+            />
             Stone Snow Washing (+£0.50/sqm)
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <input type="checkbox" checked={sanding} onChange={(e) => setSanding(e.target.checked)} />
+            <input 
+              type="checkbox" 
+              checked={sanding} 
+              onChange={(e) => setSanding(e.currentTarget.checked)} 
+            />
             Sanding (+£0.50/sqm)
           </label>
         </div>
@@ -90,20 +138,41 @@ export function PriceCalculator() {
         <div className="mb-5 grid grid-cols-3 gap-3">
           <div>
             <Label className="mb-1 block text-xs">Large (£10)</Label>
-            <Input type="number" min={0} value={large} onChange={(e) => setLarge(+e.target.value || 0)} />
+            <Input 
+              type="number" 
+              min={0} 
+              value={large} 
+              onChange={handleLargeChange}
+            />
           </div>
           <div>
             <Label className="mb-1 block text-xs">Medium (£5)</Label>
-            <Input type="number" min={0} value={medium} onChange={(e) => setMedium(+e.target.value || 0)} />
+            <Input 
+              type="number" 
+              min={0} 
+              value={medium} 
+              onChange={handleMediumChange}
+            />
           </div>
           <div>
             <Label className="mb-1 block text-xs">Small (£2.50)</Label>
-            <Input type="number" min={0} value={small} onChange={(e) => setSmall(+e.target.value || 0)} />
+            <Input 
+              type="number" 
+              min={0} 
+              value={small} 
+              onChange={handleSmallChange}
+            />
           </div>
         </div>
       )}
 
-      <Button variant="hero" size="lg" className="w-full" onClick={() => setShown(total)}>
+      <Button 
+        variant="hero" 
+        size="lg" 
+        className="w-full" 
+        onClick={handleCalculate}
+        type="button"
+      >
         Calculate Price
       </Button>
 
