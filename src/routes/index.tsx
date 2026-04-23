@@ -32,7 +32,7 @@ function HomePage() {
     <>
       {/* HERO */}
       <section className="relative overflow-hidden pt-20 min-h-screen">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 pointer-events-none">
           <img
             src={heroImg}
             alt="Pressure washing a stone driveway in Nottingham"

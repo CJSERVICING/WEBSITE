@@ -69,7 +69,8 @@ function Slider({ pair }: { pair: Pair }) {
           value={pos}
           onChange={handleChange}
           aria-label={`Reveal slider for ${pair.label}`}
-          className="absolute inset-0 h-full w-full cursor-ew-resize opacity-0 pointer-events-auto z-10"
+          className="absolute inset-y-0 cursor-ew-resize opacity-0 pointer-events-auto"
+          style={{ left: 0, width: '100%', height: '100%', zIndex: 5 }}
         />
       </div>
       <p className="mt-3 text-center text-sm font-medium text-muted-foreground">{pair.label}</p>
