@@ -3,13 +3,7 @@ compatibility_date = "2024-12-16"
 name = "website"
 pages_build_output_dir = "./dist"
 
-[build]
-command = "npm run build"
-cwd = "./"
-watch_paths = ["src/**/*.tsx", "src/**/*.ts", "public/**/*", "functions/**/*", "index.html"]
-
-# KV namespaces. The actual `id` values are bound in the Cloudflare Pages
-# dashboard for production; these placeholders are used by `wrangler pages dev`.
+# Top-level KV bindings are used by `wrangler pages dev`.
 [[kv_namespaces]]
 binding = "REVIEWS"
 id = "87f6b5aa66984ac48ccee416c1b5d21b"
@@ -20,6 +14,16 @@ id = "6c9fa1b0542a46aaa922f5e8d97ca71c"
 
 [env.production]
 vars = { ENVIRONMENT = "production" }
+
+# Pages requires KV bindings to be re-declared per environment so they are
+# actually available in that environment at runtime.
+[[env.production.kv_namespaces]]
+binding = "REVIEWS"
+id = "87f6b5aa66984ac48ccee416c1b5d21b"
+
+[[env.production.kv_namespaces]]
+binding = "AUTH"
+id = "6c9fa1b0542a46aaa922f5e8d97ca71c"
 
 # NOTE: Sensitive admin credentials (ADMIN_USERNAME, ADMIN_PASSWORD_HASH,
 # ADMIN_PASSWORD_SALT) MUST be set as ENCRYPTED secrets in the Cloudflare
