@@ -9,6 +9,7 @@ export interface Env {
   REVIEWS: KVNamespace;
   AUTH: KVNamespace;
   ADMIN_USERNAME?: string;
+  ADMIN_PASSWORD?: string;        // plaintext — used when hash/salt are not set
   ADMIN_PASSWORD_HASH?: string;
   ADMIN_PASSWORD_SALT?: string;
   ADMIN_TRUSTED_IPS?: string;
@@ -63,18 +64,30 @@ export async function derivePbkdf2(password: string, saltB64: string): Promise<U
 }
 
 export async function verifyPassword(env: Env, username: string, password: string): Promise<boolean> {
-  // If admin secrets are not configured, refuse — never accept anything.
-  if (!env.ADMIN_PASSWORD_HASH || !env.ADMIN_PASSWORD_SALT) return false;
   const expectedUser = env.ADMIN_USERNAME || "admin";
+  const enc = new TextEncoder();
 
-  // Always derive the hash, even on a username mismatch, so timing leaks
-  // don't reveal whether the username was correct.
+  // Plaintext mode: ADMIN_PASSWORD is set directly (no hash/salt needed).
+  if (env.ADMIN_PASSWORD) {
+    const userOk =
+      username.length === expectedUser.length &&
+      constantTimeEqual(enc.encode(username), enc.encode(expectedUser));
+    const passOk =
+      password.length === env.ADMIN_PASSWORD.length &&
+      constantTimeEqual(enc.encode(password), enc.encode(env.ADMIN_PASSWORD));
+    return userOk && passOk;
+  }
+
+  // PBKDF2 mode: requires both hash and salt.
+  if (!env.ADMIN_PASSWORD_HASH || !env.ADMIN_PASSWORD_SALT) return false;
+
+  // Always derive the hash even on username mismatch to prevent timing leaks.
   const expectedHash = b64decode(env.ADMIN_PASSWORD_HASH);
   const derived = await derivePbkdf2(password, env.ADMIN_PASSWORD_SALT);
 
   const userOk =
     username.length === expectedUser.length &&
-    constantTimeEqual(new TextEncoder().encode(username), new TextEncoder().encode(expectedUser));
+    constantTimeEqual(enc.encode(username), enc.encode(expectedUser));
   const passOk = constantTimeEqual(derived, expectedHash);
   return userOk && passOk;
 }
