@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin")({
   // Hide from search engines and previews.
@@ -42,12 +43,14 @@ interface ReviewDraft {
 const EMPTY_DRAFT: ReviewDraft = {
   name: "",
   location: "",
-  service: "",
+  service: "Pressure Washing",
   rating: 5,
   text: "",
   date: "",
   imageUrl: "",
 };
+
+const SERVICES = ["Pressure Washing", "Window Cleaning", "Lawn Mowing"] as const;
 
 const ADMIN_HEADERS: HeadersInit = { "x-cj-admin": "1", "content-type": "application/json" };
 
@@ -288,24 +291,37 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     if (saving) return;
     setSaving(true);
     setError(null);
+    // Optimistic update — reflect the change in the list immediately.
+    if (editingId) {
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === editingId ? { ...r, ...draft } : r,
+        ),
+      );
+    }
+    const capturedEditingId = editingId;
+    const capturedCreating = creating;
+    cancel();
     try {
-      if (editingId) {
-        await api(`/api/reviews/${editingId}`, {
+      if (capturedEditingId) {
+        await api(`/api/reviews/${capturedEditingId}`, {
           method: "PUT",
           headers: ADMIN_HEADERS,
           body: JSON.stringify(draft),
         });
-      } else if (creating) {
+      } else if (capturedCreating) {
         await api(`/api/reviews`, {
           method: "POST",
           headers: ADMIN_HEADERS,
           body: JSON.stringify(draft),
         });
+        // For creates we need the server-assigned id, so refresh.
+        await refresh();
       }
-      cancel();
-      await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed.");
+      // Roll back by re-fetching on error.
+      await refresh();
     } finally {
       setSaving(false);
     }
@@ -313,12 +329,14 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
   const remove = async (id: string) => {
     if (!confirm("Delete this review? This cannot be undone.")) return;
-    setError(null);
+    // Optimistic removal — disappears instantly.
+    setReviews((prev) => prev.filter((r) => r.id !== id));
     try {
       await api(`/api/reviews/${id}`, { method: "DELETE", headers: ADMIN_HEADERS });
-      await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Delete failed.");
+      // Roll back on error.
+      await refresh();
     }
   };
 
@@ -479,13 +497,16 @@ function ReviewEditor({
         </div>
         <div>
           <Label htmlFor="rv-service">Service</Label>
-          <Input
-            id="rv-service"
-            value={draft.service}
-            onChange={(e) => update("service", e.target.value)}
-            maxLength={80}
-            className="mt-1"
-          />
+          <Select value={draft.service} onValueChange={(v) => update("service", v)}>
+            <SelectTrigger id="rv-service" className="mt-1">
+              <SelectValue placeholder="Select a service" />
+            </SelectTrigger>
+            <SelectContent>
+              {SERVICES.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label htmlFor="rv-rating">Rating (1–5)</Label>
