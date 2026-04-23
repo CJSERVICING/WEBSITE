@@ -103,13 +103,12 @@ export function InstagramGallery() {
       </div>
       <div
         ref={containerRef}
-        className="flex flex-wrap items-start justify-center gap-6"
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       >
         {posts.map((p) => (
           <div
             key={p.id}
-            style={{ maxHeight: 520, overflow: "hidden", borderRadius: "0.75rem" }}
-            className="w-full max-w-[340px] flex-1 basis-[280px]"
+            className="w-full"
             // eslint-disable-next-line react/no-danger -- content comes from admin-only API and is sanitised server-side
             dangerouslySetInnerHTML={{ __html: p.embedHtml }}
           />
