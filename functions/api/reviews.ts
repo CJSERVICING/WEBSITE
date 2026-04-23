@@ -94,8 +94,14 @@ async function loadAllReviews(env: Env): Promise<Review[]> {
     }
     cursor = page.list_complete ? undefined : page.cursor;
   } while (cursor);
-  // Order by `order` ascending, then createdAt ascending.
-  out.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.createdAt - b.createdAt);
+  // Sort newest first by review date (falls back to createdAt when date absent),
+  // then by `order` ascending as a manual override hook for the admin.
+  out.sort((a, b) => {
+    const ad = a.date ? Date.parse(a.date) : a.createdAt;
+    const bd = b.date ? Date.parse(b.date) : b.createdAt;
+    if (bd !== ad) return bd - ad;
+    return (a.order ?? 0) - (b.order ?? 0);
+  });
   return out;
 }
 

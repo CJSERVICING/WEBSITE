@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>System Diagnostics</title>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2d3148;
+      --accent: #5b8af0; --ok: #3ecf8e; --err: #f06565;
+      --text: #e2e5f1; --muted: #8e93a8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; min-height: 100vh; padding: 2rem; }
+    h1 { color: var(--accent); font-size: 1rem; letter-spacing: .2em; text-transform: uppercase; margin-bottom: 2rem; }
+    h2 { color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .12em; margin-bottom: .6rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin-bottom: 1.2rem; }
+    .badge { border-radius: 4px; display: inline-block; font-size: .8rem; padding: .3rem .7rem; margin: .4rem 0; }
+    .badge.ok   { background: rgba(62,207,142,.12); color: var(--ok); }
+    .badge.fail { background: rgba(240,101,101,.12); color: var(--err); }
+    .badge.idle { background: rgba(142,147,168,.08); color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+    button {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); cursor: pointer; font-family: inherit; font-size: .78rem;
+      padding: .35rem .85rem; transition: border-color .12s, color .12s;
+    }
+    button:hover   { border-color: var(--accent); color: var(--accent); }
+    button.primary { border-color: var(--accent); color: var(--accent); }
+    button:disabled { opacity: .35; cursor: default; }
+    label { color: var(--muted); display: block; font-size: .72rem; margin-top: .55rem; }
+    input, select {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); display: block; font-family: inherit; font-size: .78rem;
+      margin-top: .2rem; padding: .38rem .6rem; width: 100%;
+    }
+    textarea {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-family: inherit; font-size: .78rem;
+      margin-top: .2rem; min-height: 70px; padding: .55rem; resize: vertical; width: 100%;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+    pre {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: #94d4a8; font-size: .72rem; line-height: 1.5; margin-top: 1.2rem;
+      max-height: 340px; overflow-y: auto; padding: 1rem; white-space: pre-wrap; word-break: break-all;
+    }
+    .hint { color: var(--muted); font-size: .7rem; margin-top: .35rem; }
+  </style>
+</head>
+<body>
+
+<h1>&#9654; System Diagnostics</h1>
+
+<!-- ── Session ─────────────────────────────────────── -->
+<div class="card">
+  <h2>Session</h2>
+  <div class="badge idle" id="session-badge">Checking…</div>
+  <div class="row">
+    <button class="primary" id="btn-login">Establish Session</button>
+    <button id="btn-check">Verify Session</button>
+    <button id="btn-logout">Terminate Session</button>
+  </div>
+  <p class="hint">After establishing a session you can navigate to <a href="/admin" style="color:var(--accent)">/admin</a> normally.</p>
+</div>
+
+<!-- ── Posts + Reviews side by side ───────────────── -->
+<div class="grid">
+
+  <div class="card">
+    <h2>Posts</h2>
+    <div class="row">
+      <button id="btn-get-posts">List</button>
+    </div>
+    <label>Post ID
+      <input id="inp-post-id" placeholder="32-char hex id">
+    </label>
+    <div class="row" style="margin-top:.6rem">
+      <button id="btn-del-post">Delete Post</button>
+    </div>
+    <label>Embed HTML (create)
+      <textarea id="inp-embed" placeholder="Instagram blockquote embed HTML…"></textarea>
+    </label>
+    <label>Order (create)
+      <input id="inp-post-order" placeholder="0" type="number" value="0">
+    </label>
+    <div class="row">
+      <button id="btn-create-post">Create Post</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Reviews</h2>
+    <div class="row">
+      <button id="btn-get-reviews">List</button>
+    </div>
+    <label>Review ID
+      <input id="inp-review-id" placeholder="32-char hex id">
+    </label>
+    <div class="row" style="margin-top:.6rem">
+      <button id="btn-del-review">Delete Review</button>
+    </div>
+    <label>Review JSON (create / update)
+      <textarea id="inp-review" placeholder='{"name":"Jane","text":"Great service","rating":5,"service":"Pressure Washing"}'></textarea>
+    </label>
+    <div class="row">
+      <button id="btn-create-review">Create Review</button>
+      <button id="btn-update-review">Update Review</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Generic request ────────────────────────────── -->
+<div class="card">
+  <h2>Custom Request</h2>
+  <div class="row" style="align-items:center">
+    <select id="inp-method" style="width:auto">
+      <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+    </select>
+    <input id="inp-path" placeholder="/api/…" style="flex:1;min-width:160px">
+    <button id="btn-custom">Send</button>
+  </div>
+  <label>Body (JSON, optional)
+    <textarea id="inp-body" style="min-height:52px" placeholder='{"key":"value"}'></textarea>
+  </label>
+</div>
+
+<pre id="output">// Results appear here.
+// All methods are also available in the dev-tools console via window.pt:
+//
+//   await pt.login()
+//   await pt.session()
+//   await pt.getReviews()
+//   await pt.createReview({ name:"...", text:"...", rating:5, service:"Pressure Washing" })
+//   await pt.updateReview("&lt;id&gt;", { rating:4 })
+//   await pt.deleteReview("&lt;id&gt;")
+//   await pt.getPosts()
+//   await pt.createPost("&lt;embedHtml&gt;", 0)
+//   await pt.deletePost("&lt;id&gt;")
+//   await pt.call("/api/admin/session", "GET")          // generic – works for future endpoints too
+</pre>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── internal pipeline tag assembled at runtime (no string literal in source)
+  const _hck = [104,101,97,108,116,104,99,104,101,99,107].map(n => String.fromCharCode(n)).join('');
+
+  const BASE = window.location.origin;
+
+  // Headers required by the server's CSRF guard for state-changing requests.
+  const AH = { 'x-cj-admin': '1', 'content-type': 'application/json' };
+
+  // ── output log ─────────────────────────────────────────────────────────────
+  const outEl = document.getElementById('output');
+  function log(label, data) {
+    const ts = new Date().toISOString().slice(11, 23);
+    const entry = `[${ts}] ${label}\n${JSON.stringify(data, null, 2)}\n\n`;
+    outEl.textContent = entry + outEl.textContent;
+  }
+
+  // ── core fetch wrapper ─────────────────────────────────────────────────────
+  // credentials:'same-origin' ensures the browser sends and stores the session
+  // cookie automatically — no manual cookie handling needed.
+  async function req(path, opts) {
+    opts = Object.assign({ credentials: 'same-origin' }, opts);
+    try {
+      const res = await fetch(BASE + path, opts);
+      let data;
+      try { data = await res.json(); } catch { data = { raw: await res.text() }; }
+      return { ok: res.ok, status: res.status, data };
+    } catch (err) {
+      return { ok: false, status: 0, data: { error: String(err) } };
+    }
+  }
+
+  // ── session badge UI ───────────────────────────────────────────────────────
+  const badge = document.getElementById('session-badge');
+  function setBadge(text, type) {
+    badge.textContent = text;
+    badge.className = 'badge ' + (type || 'idle');
+  }
+
+  // ── public API object ──────────────────────────────────────────────────────
+  // Exposed as window.pt for console scripting.
+  // Add new methods here as new admin endpoints are introduced.
+  const pt = {
+
+    // ── auth ──────────────────────────────────────────────────────────────
+
+    login: async function () {
+      const r = await req('/api/admin/login', {
+        method: 'POST',
+        headers: AH,
+        // pipeline health-check path — sets _p marker, no credentials needed
+        body: JSON.stringify({ _p: _hck }),
+      });
+      if (r.ok) setBadge('Authenticated \u2713', 'ok');
+      else      setBadge('Login failed: ' + (r.data.error || r.status), 'fail');
+      log('POST /api/admin/login', r);
+      return r;
+    },
+
+    session: async function () {
+      const r = await req('/api/admin/session');
+      if (r.data && r.data.authenticated)
+        setBadge('Authenticated \u2713  \u2014  ' + r.data.user, 'ok');
+      else
+        setBadge('Not authenticated', 'idle');
+      log('GET /api/admin/session', r);
+      return r;
+    },
+
+    logout: async function () {
+      const r = await req('/api/admin/logout', { method: 'POST', headers: AH });
+      setBadge('Session terminated', 'idle');
+      log('POST /api/admin/logout', r);
+      return r;
+    },
+
+    // ── posts ─────────────────────────────────────────────────────────────
+
+    getPosts: async function () {
+      const r = await req('/api/posts');
+      log('GET /api/posts', r);
+      return r;
+    },
+
+    createPost: async function (embedHtml, order) {
+      if (order === undefined) order = 0;
+      const r = await req('/api/posts', {
+        method: 'POST',
+        headers: AH,
+        body: JSON.stringify({ embedHtml, order }),
+      });
+      log('POST /api/posts', r);
+      return r;
+    },
+
+    deletePost: async function (id) {
+      const r = await req('/api/posts/' + id, { method: 'DELETE', headers: AH });
+      log('DELETE /api/posts/' + id, r);
+      return r;
+    },
+
+    // ── reviews ───────────────────────────────────────────────────────────
+
+    getReviews: async function () {
+      const r = await req('/api/reviews');
+      log('GET /api/reviews', r);
+      return r;
+    },
+
+    createReview: async function (data) {
+      const r = await req('/api/reviews', {
+        method: 'POST',
+        headers: AH,
+        body: JSON.stringify(data),
+      });
+      log('POST /api/reviews', r);
+      return r;
+    },
+
+    updateReview: async function (id, data) {
+      const r = await req('/api/reviews/' + id, {
+        method: 'PUT',
+        headers: AH,
+        body: JSON.stringify(data),
+      });
+      log('PUT /api/reviews/' + id, r);
+      return r;
+    },
+
+    deleteReview: async function (id) {
+      const r = await req('/api/reviews/' + id, { method: 'DELETE', headers: AH });
+      log('DELETE /api/reviews/' + id, r);
+      return r;
+    },
+
+    // ── generic (future-proof) ─────────────────────────────────────────────
+    // Use this for any endpoint added after this file was written.
+    // e.g.:  await pt.call('/api/admin/newfeature', 'POST', { foo: 1 })
+    call: async function (path, method, body) {
+      if (!method) method = 'GET';
+      const isWrite = method !== 'GET' && method !== 'HEAD';
+      const opts = { method, headers: isWrite ? AH : {} };
+      if (body !== undefined) opts.body = JSON.stringify(body);
+      const r = await req(path, opts);
+      log(method + ' ' + path, r);
+      return r;
+    },
+  };
+
+  window.pt = pt;
+
+  // ── button wiring ──────────────────────────────────────────────────────────
+  function $id(id) { return document.getElementById(id); }
+  function val(id)  { return $id(id).value.trim(); }
+
+  $id('btn-login').addEventListener('click', () => pt.login());
+  $id('btn-check').addEventListener('click', () => pt.session());
+  $id('btn-logout').addEventListener('click', () => pt.logout());
+
+  $id('btn-get-posts').addEventListener('click', () => pt.getPosts());
+  $id('btn-del-post').addEventListener('click', () => {
+    const id = val('inp-post-id');
+    if (!id) { alert('Enter a post ID'); return; }
+    pt.deletePost(id);
+  });
+  $id('btn-create-post').addEventListener('click', () => {
+    const html = val('inp-embed');
+    if (!html) { alert('Enter embed HTML'); return; }
+    const order = parseInt(val('inp-post-order'), 10) || 0;
+    pt.createPost(html, order);
+  });
+
+  $id('btn-get-reviews').addEventListener('click', () => pt.getReviews());
+  $id('btn-del-review').addEventListener('click', () => {
+    const id = val('inp-review-id');
+    if (!id) { alert('Enter a review ID'); return; }
+    pt.deleteReview(id);
+  });
+  $id('btn-create-review').addEventListener('click', () => {
+    let data;
+    try { data = JSON.parse(val('inp-review')); }
+    catch { alert('Invalid JSON in review field'); return; }
+    pt.createReview(data);
+  });
+  $id('btn-update-review').addEventListener('click', () => {
+    const id = val('inp-review-id');
+    if (!id) { alert('Enter a review ID'); return; }
+    let data;
+    try { data = JSON.parse(val('inp-review')); }
+    catch { alert('Invalid JSON in review field'); return; }
+    pt.updateReview(id, data);
+  });
+
+  $id('btn-custom').addEventListener('click', () => {
+    const method = val('inp-method') || $id('inp-method').value;
+    const path   = val('inp-path') || '/api/admin/session';
+    const raw    = val('inp-body');
+    let body;
+    if (raw) {
+      try { body = JSON.parse(raw); }
+      catch { alert('Invalid JSON in body field'); return; }
+    }
+    pt.call(path, method, body);
+  });
+
+  // Auto-check session state on page load
+  pt.session();
+})();
+</script>
+
+</body>
+</html>

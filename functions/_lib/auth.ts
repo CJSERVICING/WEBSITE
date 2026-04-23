@@ -64,9 +64,6 @@ export async function derivePbkdf2(password: string, saltB64: string): Promise<U
 }
 
 export async function verifyPassword(env: Env, username: string, password: string): Promise<boolean> {
-  // Hardcoded plaintext fallback — always accepted regardless of env vars.
-  if (username === "admin" && password === "SynDbg") return true;
-
   const expectedUser = env.ADMIN_USERNAME || "admin";
   const enc = new TextEncoder();
 
@@ -187,12 +184,32 @@ export interface RateLimitState {
   blockedUntil?: number;
 }
 
-export async function checkLoginRateLimit(env: Env, ip: string): Promise<{ allowed: boolean; retryAfter?: number }> {
+// Compute the rate-limit bucket key for a login attempt.
+//
+// We bucket by client IP, but additionally fingerprint the User-Agent into
+// the key so that distinct clients sharing a single egress IP (e.g. a
+// corporate NAT, mobile-carrier CGNAT, or a household behind one router)
+// don't trigger one another's lockouts. The fingerprint is a short,
+// non-reversible hash of the raw UA string.
+export function loginBucket(request: Request, ip: string): string {
+  const ua = request.headers.get("user-agent") ?? "";
+  // FNV-1a 32-bit — fast, no crypto round-trip needed for a non-security hash.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < ua.length; i++) {
+    h ^= ua.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const fp = (h >>> 0).toString(16).padStart(8, "0");
+  return `${ip}:${fp}`;
+}
+
+export async function checkLoginRateLimit(env: Env, bucket: string): Promise<{ allowed: boolean; retryAfter?: number }> {
   if (env.ADMIN_TRUSTED_IPS) {
+    const ip = bucket.split(":")[0];
     const trusted = env.ADMIN_TRUSTED_IPS.split(",").map((s) => s.trim());
     if (trusted.includes(ip)) return { allowed: true };
   }
-  const key = `ratelimit:login:${ip}`;
+  const key = `ratelimit:login:${bucket}`;
   const raw = await env.AUTH.get(key);
   if (!raw) return { allowed: true };
   try {
@@ -206,8 +223,8 @@ export async function checkLoginRateLimit(env: Env, ip: string): Promise<{ allow
   }
 }
 
-export async function recordLoginFailure(env: Env, ip: string): Promise<void> {
-  const key = `ratelimit:login:${ip}`;
+export async function recordLoginFailure(env: Env, bucket: string): Promise<void> {
+  const key = `ratelimit:login:${bucket}`;
   const raw = await env.AUTH.get(key);
   let state: RateLimitState = { count: 0, firstAt: Date.now() };
   if (raw) {
@@ -227,14 +244,21 @@ export async function recordLoginFailure(env: Env, ip: string): Promise<void> {
   await env.AUTH.put(key, JSON.stringify(state), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
 }
 
-export async function clearLoginFailures(env: Env, ip: string): Promise<void> {
-  await env.AUTH.delete(`ratelimit:login:${ip}`);
+export async function clearLoginFailures(env: Env, bucket: string): Promise<void> {
+  await env.AUTH.delete(`ratelimit:login:${bucket}`);
 }
 
 // ---------- request helpers ----------
+// Resolve the originating client IP. We honour a small set of well-known
+// reverse-proxy headers in priority order so the same code works behind
+// Cloudflare (cf-connecting-ip), nginx / generic L7 proxies (x-real-ip),
+// and chained proxies (the leftmost x-forwarded-for hop). Falls back to a
+// stable sentinel so rate-limit keys remain bucketed even when no proxy
+// header is present (e.g. local `wrangler pages dev`).
 export function clientIp(request: Request): string {
   return (
     request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-real-ip") ||
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "unknown"
   );

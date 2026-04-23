@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Quote, ChevronLeft, ChevronRight, X, Loader2, CheckCircle2 } from "lucide-react";
 
 function formatReviewDate(iso: string): string {
   try {
@@ -31,6 +31,8 @@ type Review = {
   imageUrl?: string;
 };
 
+const SERVICES = ["Pressure Washing", "Window Cleaning", "Lawn Mowing"] as const;
+
 // Fallback reviews shown if the KV fetch fails (e.g. local dev without
 // wrangler) or the dashboard hasn't been populated yet.
 const FALLBACK_REVIEWS: Review[] = [
@@ -61,6 +63,7 @@ export function Testimonials() {
   const [reviews, setReviews] = useState<Review[]>(FALLBACK_REVIEWS);
   const [page, setPage] = useState(0);
   const [perPage, setPerPage] = useState(3);
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     const compute = () => {
@@ -186,6 +189,266 @@ export function Testimonials() {
           ))}
         </div>
       )}
+
+      <div className="mt-10 flex justify-center">
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:opacity-90"
+        >
+          <Star className="h-4 w-4 fill-current" />
+          Leave your own review!
+        </button>
+      </div>
+
+      {showForm && <ReviewSubmitModal onClose={() => setShowForm(false)} />}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Customer review submission modal
+// ---------------------------------------------------------------------------
+
+interface DraftReview {
+  name: string;
+  location: string;
+  service: (typeof SERVICES)[number];
+  rating: number;
+  text: string;
+  imageUrl: string;
+}
+
+const EMPTY_DRAFT: DraftReview = {
+  name: "",
+  location: "",
+  service: "Pressure Washing",
+  rating: 5,
+  text: "",
+  imageUrl: "",
+};
+
+function ReviewSubmitModal({ onClose }: { onClose: () => void }) {
+  const [draft, setDraft] = useState<DraftReview>(EMPTY_DRAFT);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  // Lock body scroll while modal is open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const update = <K extends keyof DraftReview>(key: K, value: DraftReview[K]) =>
+    setDraft((d) => ({ ...d, [key]: value }));
+
+  const valid =
+    draft.name.trim().length > 0 &&
+    draft.text.trim().length >= 10 &&
+    draft.rating >= 1 && draft.rating <= 5;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (submitting || !valid) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/reviews/submit", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: draft.name.trim(),
+          location: draft.location.trim(),
+          service: draft.service,
+          rating: draft.rating,
+          text: draft.text.trim(),
+          imageUrl: draft.imageUrl.trim() || undefined,
+        }),
+      });
+      if (res.status === 429) {
+        setError("Too many submissions from this address. Please try again later.");
+        return;
+      }
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(
+          data.error === "text_too_short"
+            ? "Please write at least a sentence or two."
+            : data.error === "name_required"
+              ? "Please enter your name."
+              : "Could not submit your review. Please try again.",
+        );
+        return;
+      }
+      setDone(true);
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Leave a review"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-background p-6 shadow-2xl sm:p-8"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {done ? (
+          <div className="py-8 text-center">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
+            <h3 className="mt-4 text-xl font-semibold">Thank you!</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Your review has been submitted and will appear on the site once it has been approved.
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-6 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <div>
+              <h3 className="font-display text-2xl font-bold">Leave a review</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Tell us about your experience. Your review will appear here once approved.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm font-medium">
+                Your name
+                <input
+                  type="text"
+                  required
+                  maxLength={80}
+                  value={draft.name}
+                  onChange={(e) => update("name", e.target.value)}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-sm font-medium">
+                Location <span className="text-muted-foreground">(optional)</span>
+                <input
+                  type="text"
+                  maxLength={120}
+                  placeholder="e.g. West Bridgford"
+                  value={draft.location}
+                  onChange={(e) => update("location", e.target.value)}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+
+            <label className="block text-sm font-medium">
+              Service
+              <select
+                value={draft.service}
+                onChange={(e) => update("service", e.target.value as DraftReview["service"])}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {SERVICES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </label>
+
+            <fieldset>
+              <legend className="text-sm font-medium">Rating</legend>
+              <div className="mt-2 flex gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    type="button"
+                    key={n}
+                    aria-label={`${n} star${n === 1 ? "" : "s"}`}
+                    onClick={() => update("rating", n)}
+                    className="rounded p-1 transition hover:scale-110"
+                  >
+                    <Star
+                      className={`h-7 w-7 ${
+                        n <= draft.rating ? "fill-current text-accent" : "text-muted-foreground/40"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <label className="block text-sm font-medium">
+              Your review
+              <textarea
+                required
+                maxLength={1200}
+                rows={5}
+                value={draft.text}
+                onChange={(e) => update("text", e.target.value)}
+                className="mt-1 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Tell us how it went…"
+              />
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {draft.text.length}/1200 characters · minimum 10
+              </span>
+            </label>
+
+            <label className="block text-sm font-medium">
+              Photo URL <span className="text-muted-foreground">(optional, https://)</span>
+              <input
+                type="url"
+                maxLength={500}
+                placeholder="https://example.com/photo.jpg"
+                value={draft.imageUrl}
+                onChange={(e) => update("imageUrl", e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            {error && (
+              <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                className="rounded-md border border-input px-4 py-2 text-sm font-medium transition hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || !valid}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Submit review
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

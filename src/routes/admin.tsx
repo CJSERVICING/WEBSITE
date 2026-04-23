@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ImageIcon, Instagram, Loader2, LogOut, Pencil, Plus, Save, ShieldCheck, Star, Trash2, X } from "lucide-react";
+import { CalendarDays, Check, Clock, ImageIcon, Instagram, Loader2, LogOut, Pencil, Plus, Save, ShieldCheck, Star, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -386,6 +386,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         </TabsList>
 
         <TabsContent value="reviews">
+          <PendingReviewsPanel
+            onError={setError}
+            onApproved={() => void refresh()}
+          />
+
           <div className="mb-4 flex justify-end">
             <Button onClick={startCreate} disabled={editorOpen}>
               <Plus className="h-4 w-4" /> Add review
@@ -751,6 +756,152 @@ function PostsManager({ onError }: { onError: (msg: string | null) => void }) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pending review queue (customer submissions awaiting admin approval)
+// ---------------------------------------------------------------------------
+
+interface PendingReview {
+  id: string;
+  name: string;
+  location: string;
+  service: string;
+  rating: number;
+  text: string;
+  date: string;
+  imageUrl?: string;
+  createdAt: number;
+  submittedFromIp?: string;
+}
+
+function PendingReviewsPanel({
+  onError,
+  onApproved,
+}: {
+  onError: (msg: string | null) => void;
+  onApproved: () => void;
+}) {
+  const [pending, setPending] = useState<PendingReview[] | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await api<{ pending: PendingReview[] }>("/api/reviews/pending", {
+        cache: "no-store",
+      });
+      setPending(data.pending ?? []);
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Failed to load pending reviews.");
+    }
+  }, [onError]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const approve = async (id: string) => {
+    setBusyId(id);
+    onError(null);
+    try {
+      await api(`/api/reviews/pending/${id}`, {
+        method: "POST",
+        headers: ADMIN_HEADERS,
+      });
+      setPending((prev) => (prev ?? []).filter((p) => p.id !== id));
+      onApproved();
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Approve failed.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const reject = async (id: string) => {
+    if (!confirm("Reject and delete this submission? This cannot be undone.")) return;
+    setBusyId(id);
+    onError(null);
+    try {
+      await api(`/api/reviews/pending/${id}`, {
+        method: "DELETE",
+        headers: ADMIN_HEADERS,
+      });
+      setPending((prev) => (prev ?? []).filter((p) => p.id !== id));
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Reject failed.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (pending === null) {
+    return (
+      <div className="mb-6 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Loading pending submissions…
+      </div>
+    );
+  }
+
+  if (pending.length === 0) return null;
+
+  return (
+    <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Clock className="h-4 w-4 text-amber-500" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+          {pending.length} pending {pending.length === 1 ? "submission" : "submissions"}
+        </h2>
+      </div>
+      <ul className="space-y-3">
+        {pending.map((p) => (
+          <li
+            key={p.id}
+            className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 sm:flex-row sm:items-start sm:justify-between"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="truncate font-semibold">{p.name}</p>
+                <span className="flex gap-0.5 text-accent">
+                  {Array.from({ length: p.rating }).map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                  ))}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {p.location || "—"} · {p.service || "—"} · {formatDate(p.date)}
+              </p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/80">{p.text}</p>
+              {p.submittedFromIp && (
+                <p className="mt-2 font-mono text-[11px] text-muted-foreground">
+                  Submitted from {p.submittedFromIp}
+                </p>
+              )}
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button
+                size="sm"
+                onClick={() => approve(p.id)}
+                disabled={busyId === p.id}
+              >
+                {busyId === p.id
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  : <Check className="h-3.5 w-3.5" />}
+                Approve
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => reject(p.id)}
+                disabled={busyId === p.id}
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Reject
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
