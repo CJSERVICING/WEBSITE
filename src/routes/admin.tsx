@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ImageIcon, Loader2, LogOut, Pencil, Plus, Save, ShieldCheck, Star, Trash2, X } from "lucide-react";
+import { CalendarDays, ImageIcon, Instagram, Loader2, LogOut, Pencil, Plus, Save, ShieldCheck, Star, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/admin")({
   // Hide from search engines and previews.
@@ -359,12 +360,9 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Admin</p>
-          <h1 className="mt-1 font-display text-3xl font-extrabold sm:text-4xl">Reviews dashboard</h1>
+          <h1 className="mt-1 font-display text-3xl font-extrabold sm:text-4xl">Dashboard</h1>
         </div>
         <div className="flex gap-2">
-          <Button onClick={startCreate} disabled={editorOpen}>
-            <Plus className="h-4 w-4" /> Add review
-          </Button>
           <Button variant="outline" onClick={logout}>
             <LogOut className="h-4 w-4" /> Sign out
           </Button>
@@ -377,70 +375,93 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         </div>
       )}
 
-      {editorOpen && (
-        <ReviewEditor
-          draft={draft}
-          setDraft={setDraft}
-          onSave={save}
-          onCancel={cancel}
-          saving={saving}
-          mode={creating ? "create" : "edit"}
-        />
-      )}
+      <Tabs defaultValue="reviews" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="reviews">
+            <Star className="h-4 w-4" /> Reviews
+          </TabsTrigger>
+          <TabsTrigger value="posts">
+            <Instagram className="h-4 w-4" /> Gallery posts
+          </TabsTrigger>
+        </TabsList>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : reviews.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
-          No reviews yet. Click <span className="font-medium text-foreground">Add review</span> to create one.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {reviews.map((r) => (
-            <article
-              key={r.id}
-              className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-start sm:justify-between"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start gap-3">
-                  {r.imageUrl && (
-                    <img
-                      src={r.imageUrl}
-                      alt=""
-                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-semibold">{r.name}</p>
-                      <span className="flex gap-0.5 text-accent">
-                        {Array.from({ length: r.rating }).map((_, i) => (
-                          <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                        ))}
-                      </span>
+        <TabsContent value="reviews">
+          <div className="mb-4 flex justify-end">
+            <Button onClick={startCreate} disabled={editorOpen}>
+              <Plus className="h-4 w-4" /> Add review
+            </Button>
+          </div>
+
+          {editorOpen && (
+            <ReviewEditor
+              draft={draft}
+              setDraft={setDraft}
+              onSave={save}
+              onCancel={cancel}
+              saving={saving}
+              mode={creating ? "create" : "edit"}
+            />
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
+              No reviews yet. Click <span className="font-medium text-foreground">Add review</span> to create one.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map((r) => (
+                <article
+                  key={r.id}
+                  className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-start sm:justify-between"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start gap-3">
+                      {r.imageUrl && (
+                        <img
+                          src={r.imageUrl}
+                          alt=""
+                          className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate font-semibold">{r.name}</p>
+                          <span className="flex gap-0.5 text-accent">
+                            {Array.from({ length: r.rating }).map((_, i) => (
+                              <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                            ))}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {r.location || "—"} · {r.service || "—"}
+                          {r.date ? ` · ${formatDate(r.date)}` : ""}
+                        </p>
+                        <p className="mt-2 line-clamp-3 text-sm text-foreground/80">{r.text}</p>
+                      </div>
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {r.location || "—"} · {r.service || "—"}
-                      {r.date ? ` · ${formatDate(r.date)}` : ""}
-                    </p>
-                    <p className="mt-2 line-clamp-3 text-sm text-foreground/80">{r.text}</p>
                   </div>
-                </div>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <Button size="sm" variant="outline" onClick={() => startEdit(r)} disabled={editorOpen}>
-                  <Pencil className="h-3.5 w-3.5" /> Edit
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => remove(r.id)} disabled={editorOpen}>
-                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                </Button>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+                  <div className="flex shrink-0 gap-2">
+                    <Button size="sm" variant="outline" onClick={() => startEdit(r)} disabled={editorOpen}>
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => remove(r.id)} disabled={editorOpen}>
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </Button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="posts">
+          <PostsManager onError={setError} />
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }
@@ -580,6 +601,149 @@ function ReviewEditor({
           Save
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Instagram posts manager
+// ---------------------------------------------------------------------------
+
+interface IgPostRow {
+  id: string;
+  embedHtml: string;
+  permalink: string;
+}
+
+function PostsManager({ onError }: { onError: (msg: string | null) => void }) {
+  const [posts, setPosts] = useState<IgPostRow[] | null>(null);
+  const [draft, setDraft] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await api<{ posts: IgPostRow[] }>("/api/posts");
+      setPosts(data.posts ?? []);
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Failed to load posts.");
+    }
+  }, [onError]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const add = async () => {
+    const embedHtml = draft.trim();
+    if (!embedHtml) return;
+    setAdding(true);
+    onError(null);
+
+    // Optimistic placeholder — replaced by real id on refresh.
+    const tempId = `temp-${Date.now()}`;
+    const permMatch = embedHtml.match(/data-instgrm-permalink="([^"]+)"/i);
+    const permalink = permMatch ? permMatch[1].replace(/&amp;/g, "&") : "";
+    setPosts((prev) => [...(prev ?? []), { id: tempId, embedHtml, permalink }]);
+    setDraft("");
+
+    try {
+      await api("/api/posts", {
+        method: "POST",
+        headers: ADMIN_HEADERS,
+        body: JSON.stringify({ embedHtml }),
+      });
+      await refresh();
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Failed to add post.");
+      await refresh();
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const remove = async (id: string) => {
+    if (id.startsWith("temp-")) return;
+    if (!confirm("Delete this Instagram post?")) return;
+    setPosts((prev) => (prev ?? []).filter((p) => p.id !== id));
+    try {
+      await api(`/api/posts/${id}`, { method: "DELETE", headers: ADMIN_HEADERS });
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Failed to delete post.");
+      await refresh();
+    }
+  };
+
+  return (
+    <div>
+      <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+        <Label htmlFor="ig-embed">Instagram embed code</Label>
+        <Textarea
+          id="ig-embed"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={'Paste the full embed code from Instagram (starts with <blockquote class="instagram-media" ...>)'}
+          rows={6}
+          className="mt-1 font-mono text-xs"
+          disabled={adding}
+        />
+        <p className="mt-2 text-xs text-muted-foreground">
+          On Instagram open the post → ⋯ menu → <span className="font-medium">Embed</span> → Copy Embed Code. Paste the entire block here.
+        </p>
+        <div className="mt-4 flex justify-end">
+          <Button onClick={add} disabled={adding || !draft.trim()}>
+            {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Add post
+          </Button>
+        </div>
+      </div>
+
+      {posts === null ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
+          No Instagram posts yet. Paste an embed code above to add one.
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {posts.map((p) => (
+            <li
+              key={p.id}
+              className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <Instagram className="h-5 w-5 shrink-0 text-muted-foreground" />
+                <div className="min-w-0">
+                  {p.permalink ? (
+                    <a
+                      href={p.permalink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block truncate text-sm font-medium text-primary hover:underline"
+                    >
+                      {p.permalink}
+                    </a>
+                  ) : (
+                    <p className="truncate text-sm font-medium">Instagram post</p>
+                  )}
+                  <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">{p.id}</p>
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => remove(p.id)}
+                  disabled={p.id.startsWith("temp-")}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
