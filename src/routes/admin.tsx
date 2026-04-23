@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Check, Clock, ImageIcon, Instagram, Loader2, LogOut, Pencil, Plus, Save, ShieldCheck, Star, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,14 @@ export const Route = createFileRoute("/admin")({
     ],
   }),
   component: AdminPage,
+  onEnter: async () => {
+    // Force re-check of auth status every time admin page is entered
+    const res = await fetch("/api/admin/session", { credentials: "same-origin" });
+    if (!res.ok) {
+      // Redirect to home if session check fails
+      window.location.href = "/";
+    }
+  },
 });
 
 interface Review {
@@ -104,15 +112,36 @@ function AdminPage() {
 
   useEffect(() => {
     let cancelled = false;
-    api<{ authenticated: boolean }>("/api/admin/session")
-      .then((r) => {
+    
+    const checkAuth = async () => {
+      try {
+        const r = await api<{ authenticated: boolean }>("/api/admin/session");
         if (!cancelled) setAuthState(r.authenticated ? "in" : "out");
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setAuthState("out");
-      });
+      }
+    };
+
+    // Check on mount
+    checkAuth();
+
+    // Re-check when page becomes visible (tab switch)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) checkAuth();
+    };
+
+    // Re-check when window gets focus
+    const handleFocus = () => {
+      checkAuth();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
     };
   }, []);
 
