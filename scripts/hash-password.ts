@@ -54,9 +54,10 @@ async function main() {
     KEY_LEN_BITS,
   );
 
-  console.log("ADMIN_PASSWORD_HASH =", JSON.stringify(toBase64(bits)));
-  console.log("ADMIN_PASSWORD_SALT =", JSON.stringify(toBase64(salt.buffer)));
-  console.log(`# iterations=${ITERATIONS} algo=PBKDF2-SHA256 keyLen=${KEY_LEN_BITS}bit`);
+  console.log("Paste these values (WITHOUT surrounding quotes) into Cloudflare Pages secrets:\n");
+  console.log(`ADMIN_PASSWORD_HASH=${toBase64(bits)}`);
+  console.log(`ADMIN_PASSWORD_SALT=${toBase64(salt.buffer)}`);
+  console.log(`\n# iterations=${ITERATIONS} algo=PBKDF2-SHA256 keyLen=${KEY_LEN_BITS}bit`);
 }
 
 main().catch((e) => {

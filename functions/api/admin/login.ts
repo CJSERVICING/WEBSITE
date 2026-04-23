@@ -6,6 +6,7 @@ import {
   json,
   recordLoginFailure,
   sessionCookieHeader,
+  verifyPassword,
   type Env,
 } from "../../_lib/auth";
 
@@ -41,8 +42,6 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     return json({ error: "invalid_credentials" }, { status: 401 });
   }
 
-  // Lazy import keeps the module small if the route is hit without creds.
-  const { verifyPassword } = await import("../../_lib/auth");
   const ok = await verifyPassword(ctx.env, username, password);
   if (!ok) {
     await recordLoginFailure(ctx.env, ip);
