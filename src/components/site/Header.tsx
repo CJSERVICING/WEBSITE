@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Phone, Menu, X, Sparkles } from "lucide-react";
+import { Phone, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -23,7 +23,7 @@ export function Header() {
             aria-hidden="true"
             className="flex h-9 w-9 items-center justify-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-elegant)]"
           >
-            <Sparkles className="h-5 w-5" />
+            <img src="/logo.png" alt="CJ Servicing" className="h-5 w-5" />
           </span>
           <span>CJ Servicing</span>
         </Link>
