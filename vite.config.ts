@@ -19,6 +19,9 @@ export default defineConfig({
     minify: 'esbuild',
     chunkSizeWarningLimit: 1000,
     reportCompressedSize: false,
+    rollupOptions: {
+      input: path.resolve(__dirname, 'index.html'),
+    },
   },
   define: {
     'process.env.NODE_ENV': '"production"',
