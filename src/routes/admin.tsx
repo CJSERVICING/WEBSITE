@@ -244,6 +244,28 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [draft, setDraft] = useState<ReviewDraft>(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [autoApprove, setAutoApprove] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    api<{ autoApprove: boolean }>("/api/admin/config")
+      .then((r) => setAutoApprove(r.autoApprove))
+      .catch(() => setAutoApprove(false));
+  }, []);
+
+  const toggleAutoApprove = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = !autoApprove;
+    setAutoApprove(next);
+    try {
+      await api("/api/admin/config", {
+        method: "POST",
+        headers: ADMIN_HEADERS,
+        body: JSON.stringify({ autoApprove: next }),
+      });
+    } catch {
+      setAutoApprove(!next); // revert on error
+    }
+  };
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -393,7 +415,19 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
 
           <div className="mb-4 flex justify-end">
             <Button onClick={startCreate} disabled={editorOpen}>
-              <Plus className="h-4 w-4" /> Add review
+              <Plus className="h-4 w-4" />
+              <span
+                onClick={toggleAutoApprove}
+                title={autoApprove ? "Auto-approve on" : "Requires review"}
+                className={`mr-0.5 inline-block h-2 w-2 rounded-full transition-colors ${
+                  autoApprove === null
+                    ? "bg-muted-foreground/30"
+                    : autoApprove
+                      ? "bg-emerald-500/70"
+                      : "bg-amber-400/60"
+                }`}
+              />
+              Add review
             </Button>
           </div>
 
@@ -774,7 +808,6 @@ interface PendingReview {
   date: string;
   imageUrl?: string;
   createdAt: number;
-  submittedFromIp?: string;
 }
 
 function PendingReviewsPanel({
@@ -873,11 +906,6 @@ function PendingReviewsPanel({
                 {p.location || "—"} · {p.service || "—"} · {formatDate(p.date)}
               </p>
               <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/80">{p.text}</p>
-              {p.submittedFromIp && (
-                <p className="mt-2 font-mono text-[11px] text-muted-foreground">
-                  Submitted from {p.submittedFromIp}
-                </p>
-              )}
             </div>
             <div className="flex shrink-0 gap-2">
               <Button

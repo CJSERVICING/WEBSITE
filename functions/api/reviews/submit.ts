@@ -1,5 +1,7 @@
 import { json, type Env } from "../../_lib/auth";
 
+const CONFIG_KEY = "config:moderation";
+
 /**
  * POST /api/reviews/submit
  *
@@ -11,6 +13,7 @@ import { json, type Env } from "../../_lib/auth";
  */
 
 const PENDING_PREFIX = "pending:";
+const APPROVED_PREFIX = "review:";
 
 const MAX_NAME = 80;
 const MAX_LOCATION = 120;
@@ -114,6 +117,9 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const now = Date.now();
   const id = newId();
 
+  // Check whether the admin has enabled auto-approve for public submissions.
+  const autoApprove = (await ctx.env.AUTH.get(CONFIG_KEY)) === "1";
+
   // Build the pending record. Server-controlled identifiers are written
   // explicitly *after* the validated fields so the customer can never forge
   // an `id`, `status`, `createdAt` etc. The validated content fields
@@ -136,20 +142,25 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     id,
     createdAt: now,
     updatedAt: now,
-    status: "pending" as const,
+    status: autoApprove ? ("approved" as const) : ("pending" as const),
     submittedFromIp: ip,
   };
-  const pending = {
+  const record = {
     date: todayIso(),       // sensible default — may be replaced from body below
     ...body,                // pre-validated optional metadata (date, order, …)
     ...validated,           // sanitised content always wins
     ...serverFields,        // server identifiers always win
   };
 
-  await ctx.env.REVIEWS.put(`${PENDING_PREFIX}${id}`, JSON.stringify(pending), {
-    // Auto-expire pending submissions after 30 days if not actioned.
-    expirationTtl: 60 * 60 * 24 * 30,
-  });
+  if (autoApprove) {
+    // Write directly to the approved namespace — skip the pending queue.
+    await ctx.env.REVIEWS.put(`${APPROVED_PREFIX}${id}`, JSON.stringify(record));
+  } else {
+    await ctx.env.REVIEWS.put(`${PENDING_PREFIX}${id}`, JSON.stringify(record), {
+      // Auto-expire pending submissions after 30 days if not actioned.
+      expirationTtl: 60 * 60 * 24 * 30,
+    });
+  }
 
   return json({ ok: true, id }, { status: 201 });
 };
