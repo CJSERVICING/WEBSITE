@@ -1,8 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Phone, Menu, X } from "lucide-react";
+import { Phone, Menu, X, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo.png";
 
 const PHONE = "07554639668";
 
@@ -20,14 +19,12 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2 font-display font-bold text-lg">
-          <img
-            src={logo}
-            alt="CJ Servicing Logo"
-            width={84}
-            height={84}
-            decoding="async"
-            className="h-[42px] w-auto rounded-lg shadow-[var(--shadow-elegant)] object-cover object-center scale-90"
-          />
+          <span
+            aria-hidden="true"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-elegant)]"
+          >
+            <Sparkles className="h-5 w-5" />
+          </span>
           <span>CJ Servicing</span>
         </Link>
 

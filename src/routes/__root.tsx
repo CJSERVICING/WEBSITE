@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -41,41 +41,26 @@ export const Route = createRootRoute({
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "CJ Servicing — Exterior Cleaning in Nottingham & Derby" },
       { name: "twitter:title", content: "CJ Servicing — Exterior Cleaning in Nottingham & Derby" },
-      { name: "description", content: "Website for local service businesses to generate calls and quote requests." },
-      { property: "og:description", content: "Website for local service businesses to generate calls and quote requests." },
-      { name: "twitter:description", content: "Website for local service businesses to generate calls and quote requests." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/UuKw3boFV5NbPKDP632Sfe7aBmC3/social-images/social-1776713508017-CJ_SERVIVIN.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/UuKw3boFV5NbPKDP632Sfe7aBmC3/social-images/social-1776713508017-CJ_SERVIVIN.webp" },
+      { property: "og:description", content: "Affordable, reliable exterior cleaning in Nottingham & Derby. Free same-day quotes." },
+      { name: "twitter:description", content: "Affordable, reliable exterior cleaning in Nottingham & Derby. Free same-day quotes." },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
 
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
 function RootComponent() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1">
-        <Outlet />
-      </main>
-      <Footer />
-    </div>
+    <>
+      <HeadContent />
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex-1">
+          <Outlet />
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }
