@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BeforeAfterGallery } from "@/components/site/BeforeAfterGallery";
 import { InstagramGallery } from "@/components/site/InstagramGallery";
 
 export const Route = createFileRoute("/gallery")({
@@ -26,13 +25,7 @@ function GalleryPage() {
         </div>
       </section>
 
-      <section className="py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <BeforeAfterGallery />
-        </div>
-      </section>
-
-      <section className="border-t border-border py-16">
+      <section className="py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <InstagramGallery />
         </div>

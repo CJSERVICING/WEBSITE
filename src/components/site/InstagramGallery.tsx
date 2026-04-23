@@ -108,7 +108,8 @@ export function InstagramGallery() {
         {posts.map((p) => (
           <div
             key={p.id}
-            className="w-full max-w-[540px] flex-1 basis-[326px]"
+            style={{ maxHeight: 520, overflow: "hidden", borderRadius: "0.75rem" }}
+            className="w-full max-w-[340px] flex-1 basis-[280px]"
             // eslint-disable-next-line react/no-danger -- content comes from admin-only API and is sanitised server-side
             dangerouslySetInnerHTML={{ __html: p.embedHtml }}
           />
