@@ -22,9 +22,9 @@ export function Header() {
         <Link to="/" className="flex items-center gap-2 font-display font-bold text-lg">
           <span
             aria-hidden="true"
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-elegant)]"
+            className="flex h-9 w-9 overflow-hidden rounded-lg shadow-[var(--shadow-elegant)]"
           >
-            <img src={logoUrl} alt="CJ Servicing" className="h-5 w-5 rounded" decoding="async" />
+            <img src={logoUrl} alt="CJ Servicing" className="h-full w-full object-cover" decoding="async" />
           </span>
           <span>CJ Servicing</span>
         </Link>

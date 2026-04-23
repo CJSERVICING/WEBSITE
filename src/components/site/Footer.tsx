@@ -8,8 +8,8 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 font-display text-lg font-bold">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground">
-              <img src={logoUrl} alt="CJ Servicing" className="h-5 w-5 rounded" decoding="async" />
+            <span className="flex h-9 w-9 overflow-hidden rounded-lg">
+              <img src={logoUrl} alt="CJ Servicing" className="h-full w-full object-cover" decoding="async" />
             </span>
             CJ Servicing
           </div>
