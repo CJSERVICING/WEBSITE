@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Phone, Mail, MapPin, Sparkles } from "lucide-react";
+import { Phone, Mail, MapPin } from "lucide-react";
 
 export function Footer() {
   return (
@@ -8,7 +8,7 @@ export function Footer() {
         <div>
           <div className="flex items-center gap-2 font-display text-lg font-bold">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground">
-              <Sparkles className="h-5 w-5" />
+              <img src="/logo.png" alt="CJ Servicing" className="h-5 w-5" />
             </span>
             CJ Servicing
           </div>

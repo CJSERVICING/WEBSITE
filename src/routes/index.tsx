@@ -75,7 +75,6 @@ function HomePage() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-accent" /> Fully insured</span>
               <span className="flex items-center gap-1.5"><Clock className="h-4 w-4 text-accent" /> Quotes within hours</span>
               <span className="flex items-center gap-1.5"><Star className="h-4 w-4 text-accent" /> 5★ local reputation</span>
             </div>
