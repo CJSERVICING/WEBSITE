@@ -41,7 +41,7 @@ function HomePage() {
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-right sm:object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/85 to-background/30" />
         </div>
