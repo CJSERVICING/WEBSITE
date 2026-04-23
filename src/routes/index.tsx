@@ -145,7 +145,7 @@ function HomePage() {
                 <a href="tel:07554639668"><Phone className="h-4 w-4" /> Call 07554639668</a>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <a href="mailto:ServicingCJ@gmail.com"><Mail className="h-4 w-4" /> Email Photos</a>
+                <a href="mailto:enquiries@cjservicing.com"><Mail className="h-4 w-4" /> Email Photos</a>
               </Button>
             </div>
           </div>
@@ -207,7 +207,7 @@ function HomePage() {
               size="xl"
               className="border border-primary-foreground/30 bg-background/10 text-primary-foreground hover:bg-background/20"
             >
-              <a href="mailto:ServicingCJ@gmail.com"><Mail className="h-5 w-5" /> Email Us Photos</a>
+              <a href="mailto:enquiries@cjservicing.com"><Mail className="h-5 w-5" /> Email Us Photos</a>
             </Button>
           </div>
         </div>

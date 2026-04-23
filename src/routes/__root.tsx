@@ -1,5 +1,4 @@
 import { Outlet, Link, createRootRoute, HeadContent } from "@tanstack/react-router";
-import appCss from "../styles.css?url";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 
@@ -44,7 +43,6 @@ export const Route = createRootRoute({
       { property: "og:description", content: "Affordable, reliable exterior cleaning in Nottingham & Derby. Free same-day quotes." },
       { name: "twitter:description", content: "Affordable, reliable exterior cleaning in Nottingham & Derby. Free same-day quotes." },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
   }),
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

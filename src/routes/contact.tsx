@@ -7,9 +7,9 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact CJ Servicing — Call 07554639668 for a Quote" },
-      { name: "description", content: "Call 07554639668 or email ServicingCJ@gmail.com for a free quote on exterior cleaning in Nottingham & Derby." },
+      { name: "description", content: "Call 07554639668 or email enquiries@cjservicing.com for a free quote on exterior cleaning in Nottingham & Derby." },
       { property: "og:title", content: "Contact CJ Servicing" },
-      { property: "og:description", content: "Free quotes — usually same day. Call 07554639668 or email ServicingCJ@gmail.com." },
+      { property: "og:description", content: "Free quotes — usually same day. Call 07554639668 or email enquiries@cjservicing.com." },
     ],
   }),
   component: ContactPage,
@@ -43,11 +43,11 @@ function ContactPage() {
             <ContactCard
               icon={<Mail className="h-6 w-6" />}
               label="Email us"
-              value="ServicingCJ@gmail.com"
+              value="enquiries@cjservicing.com"
               hint="Send photos for an accurate quote"
               cta={
                 <Button asChild variant="cta" size="lg" className="w-full sm:w-auto">
-                  <a href="mailto:ServicingCJ@gmail.com"><Mail className="h-4 w-4" /> Email Photos</a>
+                  <a href="mailto:enquiries@cjservicing.com"><Mail className="h-4 w-4" /> Email Photos</a>
                 </Button>
               }
             />

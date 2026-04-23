@@ -35,7 +35,7 @@ export function Footer() {
             </li>
             <li className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-accent" />
-              <a href="mailto:ServicingCJ@gmail.com" className="hover:text-foreground">ServicingCJ@gmail.com</a>
+              <a href="mailto:enquiries@cjservicing.com" className="hover:text-foreground">enquiries@cjservicing.com</a>
             </li>
             <li className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-accent" />

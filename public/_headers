@@ -1,7 +1,10 @@
 # Hashed build assets — safe to cache forever
+# Access-Control-Allow-Origin is required because Vite marks the stylesheet
+# <link> with crossorigin, making the browser treat it as a CORS fetch.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
   X-Content-Type-Options: nosniff
+  Access-Control-Allow-Origin: *
 
 # HTML must always be fresh so deploys are picked up immediately
 /

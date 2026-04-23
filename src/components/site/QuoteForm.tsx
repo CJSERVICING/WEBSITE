@@ -20,7 +20,7 @@ export function QuoteForm() {
     const body = encodeURIComponent(
       `Name: ${name}\nPhone: ${phone}\nPostcode: ${postcode}\nService: ${service}\n\nDetails:\n${details}`,
     );
-    window.location.href = `mailto:ServicingCJ@gmail.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:enquiries@cjservicing.com?subject=${subject}&body=${body}`;
     setSent(true);
   }
 
@@ -84,10 +84,10 @@ export function QuoteForm() {
       )}
 
       <a
-        href="mailto:ServicingCJ@gmail.com"
+        href="mailto:enquiries@cjservicing.com"
         className="mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
-        <Mail className="h-4 w-4" /> Or email photos to ServicingCJ@gmail.com
+        <Mail className="h-4 w-4" /> Or email photos to enquiries@cjservicing.com
       </a>
     </form>
   );
