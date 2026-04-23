@@ -22,7 +22,7 @@ const MAX_TEXT = 1200;
 const MAX_IMAGE_URL = 500;
 
 const SUBMIT_RL_WINDOW_SECONDS = 60 * 60; // 1h
-const SUBMIT_RL_MAX = 3;                   // 3 submissions per IP per hour
+const SUBMIT_RL_MAX = 100;                 // 100 submissions per IP per hour
 
 const SERVICES = ["Pressure Washing", "Window Cleaning", "Lawn Mowing"];
 
