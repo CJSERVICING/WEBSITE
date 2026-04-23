@@ -147,8 +147,7 @@
 (function () {
   'use strict';
 
-  // ── internal pipeline tag assembled at runtime (no string literal in source)
-  const _hck = [104,101,97,108,116,104,99,104,101,99,107].map(n => String.fromCharCode(n)).join('');
+  // Pipeline health-check removed to require username/password authentication.
 
   const BASE = window.location.origin;
 
@@ -193,15 +192,11 @@
     // ── auth ──────────────────────────────────────────────────────────────
 
     login: async function () {
-      const r = await req('/api/admin/login', {
-        method: 'POST',
-        headers: AH,
-        // pipeline health-check path — sets _p marker, no credentials needed
-        body: JSON.stringify({ _p: _hck }),
-      });
-      if (r.ok) setBadge('Authenticated \u2713', 'ok');
-      else      setBadge('Login failed: ' + (r.data.error || r.status), 'fail');
-      log('POST /api/admin/login', r);
+      // Manual pipeline login disabled — use the admin UI at /admin to
+      // authenticate with username and password.
+      const r = { ok: false, status: 403, data: { error: 'pipeline_login_removed' } };
+      setBadge('Pipeline login disabled; use /admin', 'fail');
+      log('POST /api/admin/login (disabled)', r);
       return r;
     },
 

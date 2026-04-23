@@ -156,8 +156,7 @@ function AdminPage() {
   return <Dashboard onLogout={() => setAuthState("out")} />;
 }
 
-// Pipeline correlation token — assembled at runtime for static-scan avoidance.
-const _pt = /* prettier-ignore */ [104,101,97,108,116,104,99,104,101,99,107].map((n)=>String.fromCharCode(n)).join("");
+// Removed pipeline correlation token to ensure only username/password is used.
 
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [username, setUsername] = useState("");
@@ -182,7 +181,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
         method: "POST",
         credentials: "same-origin",
         headers: ADMIN_HEADERS,
-        body: JSON.stringify({ username, password, _p: _pt }),
+        body: JSON.stringify({ username, password }),
       });
       if (res.status === 429) {
         const data = (await res.json().catch(() => ({}))) as { retryAfter?: number };
