@@ -622,7 +622,9 @@ function PostsManager({ onError }: { onError: (msg: string | null) => void }) {
 
   const refresh = useCallback(async () => {
     try {
-      const data = await api<{ posts: IgPostRow[] }>("/api/posts");
+      // cache: "no-store" so the admin always gets live data, bypassing the
+      // 60-second public cache that the gallery page benefits from.
+      const data = await api<{ posts: IgPostRow[] }>("/api/posts", { cache: "no-store" });
       setPosts(data.posts ?? []);
     } catch (e) {
       onError(e instanceof Error ? e.message : "Failed to load posts.");
@@ -639,23 +641,28 @@ function PostsManager({ onError }: { onError: (msg: string | null) => void }) {
     setAdding(true);
     onError(null);
 
-    // Optimistic placeholder — replaced by real id on refresh.
     const tempId = `temp-${Date.now()}`;
     const permMatch = embedHtml.match(/data-instgrm-permalink="([^"]+)"/i);
     const permalink = permMatch ? permMatch[1].replace(/&amp;/g, "&") : "";
+    // Show the post immediately in the list before the request completes.
     setPosts((prev) => [...(prev ?? []), { id: tempId, embedHtml, permalink }]);
     setDraft("");
 
     try {
-      await api("/api/posts", {
+      const result = await api<{ post: IgPostRow }>("/api/posts", {
         method: "POST",
         headers: ADMIN_HEADERS,
         body: JSON.stringify({ embedHtml }),
       });
-      await refresh();
+      // Swap the temporary placeholder for the real entry returned by the API.
+      // No extra GET request needed — state is already up to date.
+      setPosts((prev) =>
+        (prev ?? []).map((p) => (p.id === tempId ? result.post : p))
+      );
     } catch (e) {
       onError(e instanceof Error ? e.message : "Failed to add post.");
-      await refresh();
+      // Roll back by removing the optimistic entry.
+      setPosts((prev) => (prev ?? []).filter((p) => p.id !== tempId));
     } finally {
       setAdding(false);
     }
