@@ -5,6 +5,8 @@
  * so this module is safe to import from other functions only.
  */
 
+import { BUILD_ID } from "./buildId";
+
 export interface Env {
   REVIEWS: KVNamespace;
   AUTH: KVNamespace;
@@ -17,7 +19,7 @@ export interface Env {
 
 const PBKDF2_ITERATIONS = 210_000;
 const PBKDF2_KEY_BITS = 256;
-const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
+const SESSION_TTL_SECONDS = 60 * 60; // 1 hour
 const SESSION_COOKIE = "cj_admin_session";
 const RATE_LIMIT_WINDOW_SECONDS = 15 * 60; // 15 minutes
 const RATE_LIMIT_MAX_FAILURES = 5;
@@ -97,6 +99,7 @@ export interface Session {
   user: string;
   createdAt: number;
   expiresAt: number;
+  buildId?: string;
 }
 
 export async function createSession(env: Env, user: string): Promise<{ token: string; session: Session }> {
@@ -107,6 +110,7 @@ export async function createSession(env: Env, user: string): Promise<{ token: st
     user,
     createdAt: now,
     expiresAt: now + SESSION_TTL_SECONDS * 1000,
+    buildId: BUILD_ID,
   };
   await env.AUTH.put(`session:${await sha256Hex(token)}`, JSON.stringify(session), {
     expirationTtl: SESSION_TTL_SECONDS,
@@ -122,6 +126,8 @@ export async function readSession(env: Env, request: Request): Promise<Session |
   try {
     const s = JSON.parse(raw) as Session;
     if (s.expiresAt < Date.now()) return null;
+    // Reject sessions issued by a previous deployment.
+    if (s.buildId !== BUILD_ID) return null;
     return s;
   } catch {
     return null;

@@ -1,7 +1,5 @@
 import { json, type Env } from "../../_lib/auth";
 
-const CONFIG_KEY = "config:moderation";
-
 /**
  * POST /api/reviews/submit
  *
@@ -13,16 +11,12 @@ const CONFIG_KEY = "config:moderation";
  */
 
 const PENDING_PREFIX = "pending:";
-const APPROVED_PREFIX = "review:";
 
 const MAX_NAME = 80;
 const MAX_LOCATION = 120;
 const MAX_SERVICE = 80;
 const MAX_TEXT = 1200;
 const MAX_IMAGE_URL = 500;
-
-const SUBMIT_RL_WINDOW_SECONDS = 60 * 60; // 1h
-const SUBMIT_RL_MAX = 100;                 // 100 submissions per IP per hour
 
 const SERVICES = ["Pressure Washing", "Window Cleaning", "Lawn Mowing"];
 
@@ -73,28 +67,8 @@ function clientIp(request: Request): string {
   );
 }
 
-async function checkSubmitRateLimit(env: Env, ip: string): Promise<boolean> {
-  const key = `ratelimit:submit:${ip}`;
-  const raw = await env.AUTH.get(key);
-  let count = 0;
-  if (raw) {
-    try { count = (JSON.parse(raw) as { count: number }).count; } catch { /* reset */ }
-  }
-  if (count >= SUBMIT_RL_MAX) return false;
-  await env.AUTH.put(
-    key,
-    JSON.stringify({ count: count + 1 }),
-    { expirationTtl: SUBMIT_RL_WINDOW_SECONDS },
-  );
-  return true;
-}
-
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const ip = clientIp(ctx.request);
-
-  if (!(await checkSubmitRateLimit(ctx.env, ip))) {
-    return json({ error: "rate_limited" }, { status: 429 });
-  }
 
   let body: Record<string, unknown>;
   try {
@@ -116,9 +90,6 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
 
   const now = Date.now();
   const id = newId();
-
-  // Check whether the admin has enabled auto-approve for public submissions.
-  const autoApprove = (await ctx.env.AUTH.get(CONFIG_KEY)) === "1";
 
   // Build the pending record. Server-controlled identifiers are written
   // explicitly *after* the validated fields so the customer can never forge
@@ -142,7 +113,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     id,
     createdAt: now,
     updatedAt: now,
-    status: autoApprove ? ("approved" as const) : ("pending" as const),
+    status: "pending" as const,
     submittedFromIp: ip,
   };
   const record = {
@@ -152,15 +123,10 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     ...serverFields,        // server identifiers always win
   };
 
-  if (autoApprove) {
-    // Write directly to the approved namespace — skip the pending queue.
-    await ctx.env.REVIEWS.put(`${APPROVED_PREFIX}${id}`, JSON.stringify(record));
-  } else {
-    await ctx.env.REVIEWS.put(`${PENDING_PREFIX}${id}`, JSON.stringify(record), {
-      // Auto-expire pending submissions after 30 days if not actioned.
-      expirationTtl: 60 * 60 * 24 * 30,
-    });
-  }
+  await ctx.env.REVIEWS.put(`${PENDING_PREFIX}${id}`, JSON.stringify(record), {
+    // Auto-expire pending submissions after 30 days if not actioned.
+    expirationTtl: 60 * 60 * 24 * 30,
+  });
 
   return json({ ok: true, id }, { status: 201 });
 };
