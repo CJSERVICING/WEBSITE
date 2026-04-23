@@ -2,28 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Website</title>
-    <script>
-      console.log('[CJ] HTML loaded, scripts beginning to load...');
-      window.__appStartTime = Date.now();
-    </script>
+    <meta name="theme-color" content="#1d4ed8" />
+    <title>CJ Servicing — Exterior Cleaning in Nottingham &amp; Derby</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="padding:40px;text-align:center;font-family:system-ui">
+        <h2>JavaScript is required</h2>
+        <p>Please enable JavaScript to view this site, or call 07554639668.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Fallback if modules don't load after 5 seconds
-      setTimeout(() => {
-        if (!window.__appStarted) {
-          console.error('[CJ] App did not start after 5 seconds - likely script loading issue');
-          const root = document.getElementById('root');
-          if (root && root.innerHTML.trim() === '') {
-            root.innerHTML = '<div style="padding: 40px; text-align: center; font-family: system-ui;"><h2>Connection Issue</h2><p>The application scripts failed to load. This is usually a Cloudflare or network issue.</p><button onclick="location.reload()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Reload Page</button></div>';
-          }
-        }
-      }, 5000);
-    </script>
   </body>
 </html>

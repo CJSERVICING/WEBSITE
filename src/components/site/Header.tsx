@@ -23,6 +23,9 @@ export function Header() {
           <img
             src={logo}
             alt="CJ Servicing Logo"
+            width={84}
+            height={84}
+            decoding="async"
             className="h-[42px] w-auto rounded-lg shadow-[var(--shadow-elegant)] object-cover object-center scale-90"
           />
           <span>CJ Servicing</span>

@@ -16,10 +16,16 @@ const pairs: Pair[] = [
 
 function Slider({ pair }: { pair: Pair }) {
   const [pos, setPos] = useState(70); // Start at 70% to show people on mobile
-  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPos(Number(e.currentTarget.value));
+    const v = Number(e.currentTarget.value);
+    setPos(Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 0);
   };
+
+  // Avoid divide-by-zero on the inner image when pos === 0. Clamp the
+  // denominator so width stays a finite percentage.
+  const safePos = Math.max(pos, 0.0001);
+  const innerWidth = `${(100 / safePos) * 100}%`;
 
   return (
     <div className="group">
@@ -28,6 +34,8 @@ function Slider({ pair }: { pair: Pair }) {
           src={pair.after}
           alt={`After: ${pair.label}`}
           className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
           draggable={false}
         />
         <div
@@ -38,7 +46,9 @@ function Slider({ pair }: { pair: Pair }) {
             src={pair.before}
             alt={`Before: ${pair.label}`}
             className="absolute inset-0 h-full w-full object-cover"
-            style={{ width: `${(100 / pos) * 100}%`, maxWidth: "none" }}
+            style={{ width: innerWidth, maxWidth: "none" }}
+            loading="lazy"
+            decoding="async"
             draggable={false}
           />
         </div>

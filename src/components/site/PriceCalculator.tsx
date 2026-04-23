@@ -6,30 +6,37 @@ import { Calculator } from "lucide-react";
 
 type Service = "pressure" | "window" | "lawn";
 
+// Clamp helper to keep numeric inputs within a safe, sane range so a stray
+// huge number can never produce Infinity / NaN values downstream.
+const MAX_VALUE = 100_000;
+const toSafeNumber = (raw: string): number => {
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, MAX_VALUE);
+};
+
 export function PriceCalculator() {
   const [service, setService] = useState<Service>("pressure");
-  const [sqm, setSqm] = useState(20);
-  const [large, setLarge] = useState(0);
-  const [medium, setMedium] = useState(0);
-  const [small, setSmall] = useState(0);
+  // Use string state for number inputs so users can type "0.5", clear the
+  // field, etc. without React fighting the input value.
+  const [sqm, setSqm] = useState("20");
+  const [large, setLarge] = useState("0");
+  const [medium, setMedium] = useState("0");
+  const [small, setSmall] = useState("0");
   const [snow, setSnow] = useState(false);
   const [sanding, setSanding] = useState(false);
   const [shown, setShown] = useState<number | null>(null);
 
   const total = useMemo(() => {
-    try {
-      if (service === "pressure") {
-        let r = 2.5 + (snow ? 0.5 : 0) + (sanding ? 0.5 : 0);
-        return Math.max(0, r * Math.max(0, sqm));
-      }
-      if (service === "window") {
-        return Math.max(0, large * 10 + medium * 5 + small * 2.5);
-      }
-      return Math.max(0, 0.25 * Math.max(0, sqm));
-    } catch (e) {
-      console.error('Price calculation error:', e);
-      return 0;
+    const sqmN = toSafeNumber(sqm);
+    if (service === "pressure") {
+      const rate = 2.5 + (snow ? 0.5 : 0) + (sanding ? 0.5 : 0);
+      return rate * sqmN;
     }
+    if (service === "window") {
+      return toSafeNumber(large) * 10 + toSafeNumber(medium) * 5 + toSafeNumber(small) * 2.5;
+    }
+    return 0.25 * sqmN;
   }, [service, sqm, large, medium, small, snow, sanding]);
 
   const services: { id: Service; label: string }[] = [
@@ -37,35 +44,6 @@ export function PriceCalculator() {
     { id: "window", label: "Window Cleaning" },
     { id: "lawn", label: "Lawn Mowing" },
   ];
-
-  const handleServiceChange = (newService: Service) => {
-    setService(newService);
-    setShown(null);
-  };
-
-  const handleSqmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.currentTarget.value) || 0;
-    setSqm(Math.max(0, value));
-  };
-
-  const handleLargeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.currentTarget.value) || 0;
-    setLarge(Math.max(0, value));
-  };
-
-  const handleMediumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.currentTarget.value) || 0;
-    setMedium(Math.max(0, value));
-  };
-
-  const handleSmallChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.currentTarget.value) || 0;
-    setSmall(Math.max(0, value));
-  };
-
-  const handleCalculate = () => {
-    setShown(total);
-  };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)] sm:p-8">
@@ -86,7 +64,10 @@ export function PriceCalculator() {
             <button
               key={s.id}
               type="button"
-              onClick={() => handleServiceChange(s.id)}
+              onClick={() => {
+                setService(s.id);
+                setShown(null);
+              }}
               className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
                 service === s.id
                   ? "border-primary bg-primary text-primary-foreground"
@@ -102,12 +83,15 @@ export function PriceCalculator() {
       {(service === "pressure" || service === "lawn") && (
         <div className="mb-5">
           <Label htmlFor="sqm" className="mb-2 block text-sm font-medium">Square Meters</Label>
-          <Input 
-            id="sqm" 
-            type="number" 
-            min={0} 
-            value={sqm} 
-            onChange={handleSqmChange}
+          <Input
+            id="sqm"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            max={MAX_VALUE}
+            value={sqm}
+            onChange={(e) => setSqm(e.currentTarget.value)}
+            onWheel={(e) => e.currentTarget.blur()}
           />
         </div>
       )}
@@ -116,18 +100,18 @@ export function PriceCalculator() {
         <div className="mb-5 space-y-2 rounded-lg bg-muted/50 p-4">
           <p className="text-sm font-medium">Add-ons</p>
           <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <input 
-              type="checkbox" 
-              checked={snow} 
-              onChange={(e) => setSnow(e.currentTarget.checked)} 
+            <input
+              type="checkbox"
+              checked={snow}
+              onChange={(e) => setSnow(e.currentTarget.checked)}
             />
             Stone Snow Washing (+£0.50/sqm)
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <input 
-              type="checkbox" 
-              checked={sanding} 
-              onChange={(e) => setSanding(e.currentTarget.checked)} 
+            <input
+              type="checkbox"
+              checked={sanding}
+              onChange={(e) => setSanding(e.currentTarget.checked)}
             />
             Sanding (+£0.50/sqm)
           </label>
@@ -138,40 +122,49 @@ export function PriceCalculator() {
         <div className="mb-5 grid grid-cols-3 gap-3">
           <div>
             <Label className="mb-1 block text-xs">Large (£10)</Label>
-            <Input 
-              type="number" 
-              min={0} 
-              value={large} 
-              onChange={handleLargeChange}
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={MAX_VALUE}
+              value={large}
+              onChange={(e) => setLarge(e.currentTarget.value)}
+              onWheel={(e) => e.currentTarget.blur()}
             />
           </div>
           <div>
             <Label className="mb-1 block text-xs">Medium (£5)</Label>
-            <Input 
-              type="number" 
-              min={0} 
-              value={medium} 
-              onChange={handleMediumChange}
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={MAX_VALUE}
+              value={medium}
+              onChange={(e) => setMedium(e.currentTarget.value)}
+              onWheel={(e) => e.currentTarget.blur()}
             />
           </div>
           <div>
             <Label className="mb-1 block text-xs">Small (£2.50)</Label>
-            <Input 
-              type="number" 
-              min={0} 
-              value={small} 
-              onChange={handleSmallChange}
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={MAX_VALUE}
+              value={small}
+              onChange={(e) => setSmall(e.currentTarget.value)}
+              onWheel={(e) => e.currentTarget.blur()}
             />
           </div>
         </div>
       )}
 
-      <Button 
-        variant="hero" 
-        size="lg" 
-        className="w-full" 
-        onClick={handleCalculate}
+      <Button
+        variant="hero"
+        size="lg"
+        className="w-full"
         type="button"
+        onClick={() => setShown(total)}
       >
         Calculate Price
       </Button>

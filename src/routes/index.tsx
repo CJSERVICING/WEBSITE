@@ -38,6 +38,9 @@ function HomePage() {
             alt="Pressure washing a stone driveway in Nottingham"
             width={1600}
             height={1024}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/85 to-background/30" />
