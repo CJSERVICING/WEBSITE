@@ -1,6 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 
+function formatReviewDate(iso: string): string {
+  try {
+    const parts = iso.split("-");
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    const date = day
+      ? new Date(Number(year), Number(month) - 1, Number(day))
+      : new Date(Number(year), Number(month) - 1, 1);
+    return date.toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "long",
+      day: day ? "numeric" : undefined,
+    });
+  } catch {
+    return iso;
+  }
+}
+
 type Review = {
   id?: string;
   name: string;
@@ -8,6 +27,8 @@ type Review = {
   rating: number;
   text: string;
   service: string;
+  date?: string;
+  imageUrl?: string;
 };
 
 // Fallback reviews shown if the KV fetch fails (e.g. local dev without
@@ -105,21 +126,34 @@ export function Testimonials() {
         {visible.map((r, idx) => (
           <article
             key={r.id ?? `${r.name}-${page}-${idx}`}
-            className="relative flex w-full max-w-md flex-1 flex-col rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]"
+            className="relative flex w-full max-w-md flex-1 flex-col rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] overflow-hidden"
           >
-            <Quote className="absolute right-5 top-5 h-8 w-8 text-primary/15" />
-            <div className="flex gap-0.5 text-accent">
-              {Array.from({ length: r.rating }).map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-current" />
-              ))}
-            </div>
-            <p className="mt-4 flex-1 text-sm leading-relaxed text-foreground/90">"{r.text}"</p>
-            <div className="mt-5 border-t border-border pt-4">
-              <p className="font-semibold">{r.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {r.location}
-                {r.service ? ` · ${r.service}` : ""}
-              </p>
+            {r.imageUrl && (
+              <div className="h-40 w-full overflow-hidden">
+                <img
+                  src={r.imageUrl}
+                  alt={`Work for ${r.name}`}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            )}
+            <div className="relative flex flex-1 flex-col p-6">
+              <Quote className="absolute right-5 top-5 h-8 w-8 text-primary/15" />
+              <div className="flex gap-0.5 text-accent">
+                {Array.from({ length: r.rating }).map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-current" />
+                ))}
+              </div>
+              <p className="mt-4 flex-1 text-sm leading-relaxed text-foreground/90">"{r.text}"</p>
+              <div className="mt-5 border-t border-border pt-4">
+                <p className="font-semibold">{r.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {r.location}
+                  {r.service ? ` · ${r.service}` : ""}
+                  {r.date ? ` · ${formatReviewDate(r.date)}` : ""}
+                </p>
+              </div>
             </div>
           </article>
         ))}

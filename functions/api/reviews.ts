@@ -7,6 +7,8 @@ export interface Review {
   service: string;
   rating: number; // 1..5
   text: string;
+  date?: string;     // ISO date string e.g. "2024-03-15"
+  imageUrl?: string; // https:// URL only
   order: number; // for sorting (lower = first)
   createdAt: number;
   updatedAt: number;
@@ -16,6 +18,8 @@ const MAX_NAME = 80;
 const MAX_LOCATION = 120;
 const MAX_SERVICE = 80;
 const MAX_TEXT = 1200;
+const MAX_DATE = 10;       // YYYY-MM-DD
+const MAX_IMAGE_URL = 500;
 const KV_PREFIX = "review:";
 
 function sanitiseString(input: unknown, max: number): string {
@@ -41,6 +45,24 @@ function newId(): string {
   return s;
 }
 
+function sanitiseImageUrl(input: unknown): string {
+  const s = sanitiseString(input, MAX_IMAGE_URL);
+  // Only allow https:// URLs to prevent javascript: injection.
+  if (!s) return "";
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:" ? s : "";
+  } catch {
+    return "";
+  }
+}
+
+function sanitiseDate(input: unknown): string {
+  const s = sanitiseString(input, MAX_DATE);
+  // Accept YYYY-MM-DD or YYYY-MM; reject anything else.
+  return /^\d{4}-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?$/.test(s) ? s : "";
+}
+
 function validateReviewBody(body: unknown): { ok: true; value: Omit<Review, "id" | "createdAt" | "updatedAt" | "order"> & { order?: number } } | { ok: false; error: string } {
   if (!body || typeof body !== "object") return { ok: false, error: "invalid_body" };
   const b = body as Record<string, unknown>;
@@ -49,9 +71,11 @@ function validateReviewBody(body: unknown): { ok: true; value: Omit<Review, "id"
   const service = sanitiseString(b.service, MAX_SERVICE);
   const text = sanitiseString(b.text, MAX_TEXT);
   const rating = sanitiseRating(b.rating);
+  const date = sanitiseDate(b.date);
+  const imageUrl = sanitiseImageUrl(b.imageUrl);
   if (!name || !text) return { ok: false, error: "name_and_text_required" };
   const order = typeof b.order === "number" && Number.isFinite(b.order) ? b.order : undefined;
-  return { ok: true, value: { name, location, service, text, rating, order } };
+  return { ok: true, value: { name, location, service, text, rating, date: date || undefined, imageUrl: imageUrl || undefined, order } };
 }
 
 async function loadAllReviews(env: Env): Promise<Review[]> {
@@ -85,6 +109,8 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     service: r.service,
     rating: r.rating,
     text: r.text,
+    date: r.date,
+    imageUrl: r.imageUrl,
   }));
   return new Response(JSON.stringify({ reviews: publicList }), {
     status: 200,
@@ -120,6 +146,8 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     service: v.value.service,
     rating: v.value.rating,
     text: v.value.text,
+    date: v.value.date,
+    imageUrl: v.value.imageUrl,
     order: v.value.order ?? now, // default: append (timestamp)
     createdAt: now,
     updatedAt: now,

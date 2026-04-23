@@ -5,6 +5,8 @@ const MAX_NAME = 80;
 const MAX_LOCATION = 120;
 const MAX_SERVICE = 80;
 const MAX_TEXT = 1200;
+const MAX_IMAGE_URL = 500;
+const MAX_DATE = 10;
 
 function sanitiseString(input: unknown, max: number): string {
   if (typeof input !== "string") return "";
@@ -15,6 +17,22 @@ function sanitiseRating(input: unknown): number {
   const n = typeof input === "number" ? input : Number(input);
   if (!Number.isFinite(n)) return 5;
   return Math.max(1, Math.min(5, Math.round(n)));
+}
+
+function sanitiseImageUrl(input: unknown): string {
+  const s = sanitiseString(input, MAX_IMAGE_URL);
+  if (!s) return "";
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:" ? s : "";
+  } catch {
+    return "";
+  }
+}
+
+function sanitiseDate(input: unknown): string {
+  const s = sanitiseString(input, MAX_DATE);
+  return /^\d{4}-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?$/.test(s) ? s : "";
 }
 
 function isValidId(id: string): boolean {
@@ -28,6 +46,8 @@ interface StoredReview {
   service: string;
   rating: number;
   text: string;
+  date?: string;
+  imageUrl?: string;
   order: number;
   createdAt: number;
   updatedAt: number;
@@ -61,6 +81,12 @@ export const onRequestPut: PagesFunction<Env> = async (ctx) => {
       body.service !== undefined ? sanitiseString(body.service, MAX_SERVICE) : existing.service,
     text: body.text !== undefined ? sanitiseString(body.text, MAX_TEXT) || existing.text : existing.text,
     rating: body.rating !== undefined ? sanitiseRating(body.rating) : existing.rating,
+    date: body.date !== undefined
+      ? (sanitiseDate(body.date) || undefined)
+      : existing.date,
+    imageUrl: body.imageUrl !== undefined
+      ? (sanitiseImageUrl(body.imageUrl) || undefined)
+      : existing.imageUrl,
     order:
       typeof body.order === "number" && Number.isFinite(body.order)
         ? (body.order as number)

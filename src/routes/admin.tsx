@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, LogOut, Pencil, Plus, Save, ShieldCheck, Star, Trash2, X } from "lucide-react";
+import { CalendarDays, ImageIcon, Loader2, LogOut, Pencil, Plus, Save, ShieldCheck, Star, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +24,8 @@ interface Review {
   service: string;
   rating: number;
   text: string;
+  date?: string;
+  imageUrl?: string;
   order?: number;
 }
 
@@ -33,6 +35,8 @@ interface ReviewDraft {
   service: string;
   rating: number;
   text: string;
+  date: string;
+  imageUrl: string;
 }
 
 const EMPTY_DRAFT: ReviewDraft = {
@@ -41,9 +45,31 @@ const EMPTY_DRAFT: ReviewDraft = {
   service: "",
   rating: 5,
   text: "",
+  date: "",
+  imageUrl: "",
 };
 
 const ADMIN_HEADERS: HeadersInit = { "x-cj-admin": "1", "content-type": "application/json" };
+
+function formatDate(iso: string): string {
+  try {
+    // Accept YYYY-MM or YYYY-MM-DD
+    const parts = iso.split("-");
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    const date = day
+      ? new Date(Number(year), Number(month) - 1, Number(day))
+      : new Date(Number(year), Number(month) - 1, 1);
+    return date.toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "long",
+      day: day ? "numeric" : undefined,
+    });
+  } catch {
+    return iso;
+  }
+}
 
 async function api<T>(input: string, init?: RequestInit): Promise<T> {
   const res = await fetch(input, {
@@ -241,6 +267,8 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       service: r.service,
       rating: r.rating,
       text: r.text,
+      date: r.date ?? "",
+      imageUrl: r.imageUrl ?? "",
     });
   };
 
@@ -358,18 +386,30 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-start sm:justify-between"
             >
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-3">
-                  <p className="truncate font-semibold">{r.name}</p>
-                  <span className="flex gap-0.5 text-accent">
-                    {Array.from({ length: r.rating }).map((_, i) => (
-                      <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                    ))}
-                  </span>
+                <div className="flex items-start gap-3">
+                  {r.imageUrl && (
+                    <img
+                      src={r.imageUrl}
+                      alt=""
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-semibold">{r.name}</p>
+                      <span className="flex gap-0.5 text-accent">
+                        {Array.from({ length: r.rating }).map((_, i) => (
+                          <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                        ))}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {r.location || "—"} · {r.service || "—"}
+                      {r.date ? ` · ${formatDate(r.date)}` : ""}
+                    </p>
+                    <p className="mt-2 line-clamp-3 text-sm text-foreground/80">{r.text}</p>
+                  </div>
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {r.location || "—"} · {r.service || "—"}
-                </p>
-                <p className="mt-2 line-clamp-3 text-sm text-foreground/80">{r.text}</p>
               </div>
               <div className="flex shrink-0 gap-2">
                 <Button size="sm" variant="outline" onClick={() => startEdit(r)} disabled={editorOpen}>
@@ -472,6 +512,42 @@ function ReviewEditor({
             className="mt-1"
           />
           <p className="mt-1 text-xs text-muted-foreground">{draft.text.length}/1200 characters</p>
+        </div>
+        <div>
+          <Label htmlFor="rv-date">
+            <CalendarDays className="mr-1 inline h-3.5 w-3.5" />
+            Date (YYYY-MM-DD or YYYY-MM)
+          </Label>
+          <Input
+            id="rv-date"
+            value={draft.date}
+            onChange={(e) => update("date", e.target.value)}
+            placeholder="e.g. 2024-03-15"
+            maxLength={10}
+            className="mt-1"
+          />
+        </div>
+        <div>
+          <Label htmlFor="rv-image">
+            <ImageIcon className="mr-1 inline h-3.5 w-3.5" />
+            Image URL (https://)
+          </Label>
+          <Input
+            id="rv-image"
+            value={draft.imageUrl}
+            onChange={(e) => update("imageUrl", e.target.value)}
+            placeholder="https://example.com/image.jpg"
+            maxLength={500}
+            className="mt-1"
+          />
+          {draft.imageUrl && (
+            <img
+              src={draft.imageUrl}
+              alt="Preview"
+              className="mt-2 h-20 w-20 rounded-lg object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          )}
         </div>
       </div>
       <div className="mt-5 flex justify-end gap-2">
