@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Phone, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import logoUrl from "@/assets/logo.png";
 
 const PHONE = "07554639668";
 
@@ -23,7 +24,7 @@ export function Header() {
             aria-hidden="true"
             className="flex h-9 w-9 items-center justify-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-elegant)]"
           >
-            <img src="/logo.png" alt="CJ Servicing" className="h-5 w-5" />
+            <img src={logoUrl} alt="CJ Servicing" className="h-5 w-5 rounded" decoding="async" />
           </span>
           <span>CJ Servicing</span>
         </Link>
