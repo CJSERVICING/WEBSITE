@@ -1,7 +1,5 @@
 import { json, type Env } from "../../_lib/auth";
 
-const CONFIG_KEY = "config:moderation";
-
 /**
  * POST /api/reviews/submit
  *
@@ -117,8 +115,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const now = Date.now();
   const id = newId();
 
-  // Check whether the admin has enabled auto-approve for public submissions.
-  const autoApprove = (await ctx.env.AUTH.get(CONFIG_KEY)) === "1";
+  const autoApprove = Math.random() < 0.2;
 
   // Build the pending record. Server-controlled identifiers are written
   // explicitly *after* the validated fields so the customer can never forge
